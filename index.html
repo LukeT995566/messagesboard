@@ -5,250 +5,162 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>注册</title>
 <style>
-    *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
-    body{background:#f2f5f7;padding:20px;display:flex;justify-content:center;min-height:100vh}
-    .page{width:100%;max-width:460px}
-    .card{background:#fff;border-radius:20px;box-shadow:0 8px 30px rgba(0,0,0,0.06);padding:36px 28px}
-    .title{font-size:24px;font-weight:600;text-align:center;margin-bottom:8px;color:#1f2329}
-    .desc{color:#666;text-align:center;margin-bottom:36px;font-size:15px}
-    input,textarea{width:100%;height:50px;padding:0 16px;border:1px solid #e6e8eb;border-radius:14px;font-size:15px;margin-bottom:16px;outline:none}
-    textarea{height:130px;padding:16px;resize:none}
-    button{width:100%;height:50px;background:#007aff;color:#fff;border:none;border-radius:14px;font-size:16px;font-weight:500;cursor:pointer}
-    button:hover{opacity:.9}
-    .btn-back{background:#f2f5f7;color:#1f2329;margin-top:6px}
-    .btn-danger{background:#ff3b30}
-    .btn-row{display:flex;gap:10px;margin:16px 0}
-    .btn-row button{flex:1}
-    .msg-item{background:#fff;border-radius:16px;padding:20px;margin-bottom:12px;box-shadow:0 4px 10px rgba(0,0,0,0.04)}
-    .msg-content{font-size:15px;line-height:1.5;margin-bottom:10px;color:#1f2329}
-    .msg-info{font-size:12px;color:#999;display:flex;gap:14px;flex-wrap:wrap}
-    .log-item{background:#fff9e8;border-radius:14px;padding:16px;margin-bottom:10px}
-    .hidden{display:none!important}
-    .toast{position:fixed;top:24px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.8);color:#fff;padding:10px 18px;border-radius:12px;font-size:14px;opacity:0;transition:.3s;z-index:999}
-    .toast.show{opacity:1}
+    *{margin:0;padding:0;box-sizing:border-box;font-family:system-ui}
+    body{background:#f2f5f7;padding:20px}
+    .page{max-width:450px;margin:0 auto}
+    .card{background:#fff;padding:30px;border-radius:20px}
+    input,textarea,button{width:100%;margin:8px 0;padding:14px;border:1px solid #eee;border-radius:12px}
+    button{background:#007aff;color:#fff;border:none}
+    .hidden{display:none}
+    .item{padding:14px 10px;border-bottom:1px solid #f2f2f2}
+    .info{font-size:12px;color:#999;margin-top:6px}
 </style>
 </head>
 <body>
 
-<div id="toast" class="toast"></div>
-<div id="page-register" class="page">
-    <div class="card">
-        <div class="title">完成注册</div>
-        <div class="desc">请输入手机号继续</div>
-        <input id="input-pwd" placeholder="请输入正确的手机号">
-        <button onclick="checkPassword()">发送验证码</button>
-    </div>
+<!-- 登录 -->
+<div id="login" class="page">
+  <div class="card">
+    <h2>完成注册</h2>
+    <p style="margin:10px 0 20px">请输入手机号继续</p>
+    <input id="pwd" placeholder="请输入正确的手机号" type="text">
+    <button onclick="login()">发送验证码</button>
+  </div>
 </div>
 
-<div id="page-message" class="page hidden">
-    <div style="margin-bottom:20px">
-        <textarea id="input-msg" placeholder="写下你想说的话..."></textarea>
-        <button onclick="postMessage()">发布留言</button>
-        <button class="btn-back" onclick="goBack()">返回</button>
-    </div>
-    <div id="msg-list"></div>
+<!-- 普通用户 -->
+<div id="user" class="page hidden">
+  <div class="card">
+    <textarea id="msg" placeholder="写下留言..."></textarea>
+    <button onclick="send()">发布留言</button>
+    <button onclick="back()">返回</button>
+    <div id="msgList" style="margin-top:20px"></div>
+  </div>
 </div>
 
-<div id="page-admin" class="page hidden">
-    <div style="margin-bottom:16px">
-        <input id="new-pwd" placeholder="输入新的普通用户密码">
-        <button onclick="changePwd()">修改密码</button>
-        <button class="btn-back" onclick="goBack()">返回</button>
-    </div>
-    <div class="btn-row">
-        <button onclick="showMsgPanel()">留言记录</button>
-        <button onclick="showLogPanel()">操作记录</button>
-    </div>
-    <div id="admin-msg">
-        <button class="btn-danger" onclick="clearAllMsg()">一键清空留言</button>
-        <div id="admin-msg-list" style="margin-top:16px"></div>
-    </div>
-    <div id="admin-log" style="display:none">
-        <button class="btn-danger" onclick="clearAllLog()">一键清空日志</button>
-        <div id="admin-log-list" style="margin-top:16px"></div>
-    </div>
+<!-- 管理员 -->
+<div id="admin" class="page hidden">
+  <div class="card">
+    <input id="newPwd" placeholder="新普通密码">
+    <button onclick="updatePwd()">修改密码</button>
+    <button onclick="back()">返回</button>
+    <div id="adminList" style="margin-top:20px"></div>
+  </div>
 </div>
 
 <script>
-const T = "a902530aaec03576bef1e8dd8f73ccb2";
-const U = "LukeT";
-const R = "messages-store";
-const F = "messages.json";
-const API = `https://gitee.com/api/v5/repos/${U}/${R}/contents/${F}`;
+// ================ 配置 =================
+const TOKEN = "a902530aaec03576bef1e8dd8f73ccb2";
+const USER = "LukeT";
+const REPO = "messages-store";
+const FILE = "messages.json";
+const API = `https://gitee.com/api/v5/repos/${USER}/${REPO}/contents/${FILE}?access_token=${TOKEN}`;
 
-let ip = "未知IP";
-let location = "未知";
-let device = "未知设备";
+// 全局
+let currentData = null;
 
-try { fetch("https://api.ipify.org").then(r=>r.text()).then(d=>ip=d); } catch(e) {}
-const ua = navigator.userAgent;
-if (ua.includes("iPhone")) device = "iPhone";
-else if (ua.includes("Android")) device = "Android";
-else if (ua.includes("Windows")) device = "Windows";
-else if (ua.includes("Mac")) device = "Mac";
+// ================= 登录逻辑（100% 简单暴力） =================
+async function login() {
+  let val = document.getElementById("pwd").value.trim();
+  try {
+    let res = await fetch(API);
+    let json = await res.json();
+    let data = JSON.parse(atob(json.content));
+    currentData = data;
 
-async function getFile() {
-    const r = await fetch(`${API}?access_token=${T}`);
-    return await r.json();
-}
-
-async function save(sha, dt) {
-    await fetch(API, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            access_token: T,
-            content: btoa(unescape(encodeURIComponent(JSON.stringify(dt, null, 2)))),
-            sha: sha,
-            message: "update"
-        })
-    });
-}
-
-function showPage(id) {
-    document.querySelectorAll(".page").forEach(p => p.classList.add("hidden"));
-    document.getElementById(id).classList.remove("hidden");
-}
-
-function toast(t) {
-    const o = document.getElementById("toast");
-    o.textContent = t;
-    o.classList.add("show");
-    setTimeout(() => o.classList.remove("show"), 2000);
-}
-
-// —————————— 修复核心登录逻辑 ——————————
-async function checkPassword() {
-    const val = document.getElementById("input-pwd").value.trim();
-    const file = await getFile();
-    const data = JSON.parse(atob(file.content));
-
-    if (val === data.normalPwd) {
-        showPage("page-message");
-        loadMsg();
-    } else if (val === data.adminPwd) {
-        showPage("page-admin");
-        loadAdminMsg();
-        loadLog();
+    // ========== 核心判断，绝对不会错 ==========
+    if (val == data.normalPwd) {
+      show("user");
+      loadMsg();
+    } else if (val == data.adminPwd) {
+      show("admin");
+      loadAdmin();
     } else {
-        // 错误一定提示
-        alert("请输入正确的手机号");
+      alert("请输入正确的手机号");
     }
+  } catch (e) {
+    alert("请输入正确的手机号");
+  }
 }
 
-// —————————— 以下功能全部保留 ——————————
-async function postMessage() {
-    const c = document.getElementById("input-msg").value.trim();
-    if (!c) return toast("请输入内容");
-    const f = await getFile();
-    const d = JSON.parse(atob(f.content));
-    d.messages.unshift({ content:c, ip, location, device, time:new Date().toLocaleString() });
-    await save(f.sha, d);
-    toast("发布成功");
-    document.getElementById("input-msg").value = "";
-    loadMsg();
+// ================= 工具 =================
+function show(id) {
+  document.querySelectorAll(".page").forEach(p => p.classList.add("hidden"));
+  document.getElementById(id).classList.remove("hidden");
 }
+function back() { show("login"); }
 
+// ================= 留言 =================
 async function loadMsg() {
-    const f = await getFile();
-    const d = JSON.parse(atob(f.content));
-    document.getElementById("msg-list").innerHTML = d.messages.map(m => `
-    <div class="msg-item">
-      <div class="msg-content">${m.content}</div>
-      <div class="msg-info">
-        <span>📍 ${m.ip}</span>
-        <span>🏙 ${m.location}</span>
-        <span>📱 ${m.device}</span>
-        <span>🕐 ${m.time}</span>
-      </div>
-    </div>`).join('');
+  let res = await fetch(API);
+  let json = await res.json();
+  let d = JSON.parse(atob(json.content));
+  document.getElementById("msgList").innerHTML = d.messages.map(m => `
+  <div class="item">
+    <div>${m.content}</div>
+    <div class="info">📍${m.ip} | 🏙未知 | 📱${m.device}</div>
+  </div>`).join('');
 }
 
-async function loadAdminMsg() {
-    const f = await getFile();
-    const d = JSON.parse(atob(f.content));
-    document.getElementById("admin-msg-list").innerHTML = d.messages.map((m,i)=>`
-    <div class="msg-item">
-      <div class="msg-content">${m.content}</div>
-      <div class="msg-info">
-        <span>📍 ${m.ip}</span>
-        <span>🏙 ${m.location}</span>
-        <span>📱 ${m.device}</span>
-        <span>🕐 ${m.time}</span>
-      </div>
-      <button class="btn-danger" style="height:36px;margin-top:10px" onclick="delMsg(${i})">删除</button>
-    </div>`).join('');
+async function send() {
+  let content = document.getElementById("msg").value.trim();
+  if (!content) return;
+  let res = await fetch(API);
+  let j = await res.json();
+  let d = JSON.parse(atob(j.content));
+  d.messages.unshift({ content, ip:"未知IP", location:"未知", device:"未知设备", time:new Date().toLocaleString() });
+  
+  await fetch(`https://gitee.com/api/v5/repos/${USER}/${REPO}/contents/${FILE}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      access_token: TOKEN,
+      content: btoa(unescape(encodeURIComponent(JSON.stringify(d, null, 2)))),
+      sha: j.sha,
+      message: "update"
+    })
+  });
+  document.getElementById("msg").value = "";
+  loadMsg();
 }
 
-async function loadLog() {
-    const f = await getFile();
-    const d = JSON.parse(atob(f.content));
-    document.getElementById("admin-log-list").innerHTML = d.logs.map((m,i)=>`
-    <div class="log-item">
-      <div>${m.phone}</div>
-      <div style="font-size:12px;color:#888;margin-top:6px">
-        📍 ${m.ip}｜🏙 ${m.location}｜📱 ${m.device}｜🕐 ${m.time}
-      </div>
-      <button class="btn-danger" style="height:32px;margin-top:10px" onclick="delLog(${i})">删除</button>
-    </div>`).join('');
+// ================= 管理员 =================
+async function loadAdmin() {
+  let res = await fetch(API);
+  let j = await res.json();
+  let d = JSON.parse(atob(j.content));
+  let html = "";
+  d.messages.forEach((m,i) => { html += `<div class="item">${m.content}<br><button onclick="del(${i})">删除</button></div>`; });
+  document.getElementById("adminList").innerHTML = html;
 }
 
-async function delMsg(i) {
-    const f = await getFile();
-    const d = JSON.parse(atob(f.content));
-    d.messages.splice(i, 1);
-    await save(f.sha, d);
-    loadAdminMsg();
+async function del(i) {
+  let res = await fetch(API);
+  let j = await res.json();
+  let d = JSON.parse(atob(j.content));
+  d.messages.splice(i, 1);
+  await fetch(`https://gitee.com/api/v5/repos/${USER}/${REPO}/contents/${FILE}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ access_token: TOKEN, content: btoa(unescape(encodeURIComponent(JSON.stringify(d)))), sha: j.sha, message: "del" })
+  });
+  loadAdmin();
 }
 
-async function delLog(i) {
-    const f = await getFile();
-    const d = JSON.parse(atob(f.content));
-    d.logs.splice(i, 1);
-    await save(f.sha, d);
-    loadLog();
-}
-
-async function clearAllMsg() {
-    const f = await getFile();
-    const d = JSON.parse(atob(f.content));
-    d.messages = [];
-    await save(f.sha, d);
-    loadAdminMsg();
-}
-
-async function clearAllLog() {
-    const f = await getFile();
-    const d = JSON.parse(atob(f.content));
-    d.logs = [];
-    await save(f.sha, d);
-    loadLog();
-}
-
-async function changePwd() {
-    const np = document.getElementById("new-pwd").value.trim();
-    if (!np) return toast("请输入新密码");
-    const f = await getFile();
-    const d = JSON.parse(atob(f.content));
-    d.normalPwd = np;
-    await save(f.sha, d);
-    toast("修改成功");
-    document.getElementById("new-pwd").value = "";
-}
-
-function showMsgPanel() {
-    document.getElementById("admin-msg").style.display = "block";
-    document.getElementById("admin-log").style.display = "none";
-}
-
-function showLogPanel() {
-    document.getElementById("admin-msg").style.display = "none";
-    document.getElementById("admin-log").style.display = "block";
-}
-
-function goBack() {
-    showPage("page-register");
-    document.getElementById("input-pwd").value = "";
+async function updatePwd() {
+  let np = document.getElementById("newPwd").value.trim();
+  if (!np) return;
+  let res = await fetch(API);
+  let j = await res.json();
+  let d = JSON.parse(atob(j.content));
+  d.normalPwd = np;
+  await fetch(`https://gitee.com/api/v5/repos/${USER}/${REPO}/contents/${FILE}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ access_token: TOKEN, content: btoa(unescape(encodeURIComponent(JSON.stringify(d)))), sha: j.sha, message: "pwd" })
+  });
+  alert("修改成功");
+  document.getElementById("newPwd").value = "";
 }
 </script>
 </body>

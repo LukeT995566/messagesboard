@@ -19,7 +19,6 @@
             justify-content: center;
             padding: 20px;
         }
-        /* 通用卡片样式 */
         .card {
             background: white;
             border-radius: 16px;
@@ -28,7 +27,6 @@
             max-width: 420px;
             padding: 48px 32px;
         }
-        /* 注册页面样式 */
         #registerPage h1 {
             font-size: 28px;
             font-weight: 600;
@@ -96,7 +94,6 @@
         .btn-danger:hover {
             background: #d70015;
         }
-        /* 提示框 */
         .toast {
             position: fixed;
             top: 24px;
@@ -115,11 +112,9 @@
         .toast.show {
             opacity: 1;
         }
-        /* 隐藏类 */
         .hidden {
             display: none !important;
         }
-        /* 留言板页面 */
         .page {
             width: 100%;
             max-width: 600px;
@@ -190,7 +185,7 @@
             background: #ff3b30;
             color: white;
             border: none;
-            padding: 4px 8px;
+            padding:  4px 8px;
             border-radius: 4px;
             font-size: 12px;
             cursor: pointer;
@@ -201,7 +196,6 @@
             padding: 40px 0;
             font-size: 14px;
         }
-        /* 管理后台页面 */
         .admin-tabs {
             display: flex;
             gap: 12px;
@@ -283,7 +277,6 @@
 <body>
     <div id="toast" class="toast"></div>
 
-    <!-- 伪装注册页面（首页） -->
     <div id="registerPage" class="card">
         <h1>完成注册</h1>
         <p class="desc">请输入手机号继续</p>
@@ -293,7 +286,6 @@
         <button class="btn" onclick="verify()">发送验证码</button>
     </div>
 
-    <!-- 普通用户留言板页面 -->
     <div id="messagePage" class="page hidden">
         <div class="page-header">
             <h2>留言板</h2>
@@ -308,7 +300,6 @@
         </div>
     </div>
 
-    <!-- 管理员后台页面 -->
     <div id="adminPage" class="page hidden">
         <div class="page-header">
             <h2>管理后台</h2>
@@ -348,7 +339,6 @@
     </div>
 
     <script>
-        // 配置信息（已帮你填好，不用改）
         const OWNER = "luket995566";
         const REPO = "messagesboard";
         const FILE = "messages.json";
@@ -359,7 +349,6 @@
         let userIP = "未知IP";
         let userDevice = "未知设备";
 
-        // 初始化获取用户信息
         async function init() {
             try {
                 const ipRes = await fetch('https://api.ipify.org?format=json');
@@ -375,11 +364,9 @@
             else if (ua.includes('iPad')) userDevice = 'iPad';
         }
 
-        // 权限验证（严格按照要求）
         async function verify() {
             const input = document.getElementById('phoneInput').value.trim();
             
-            // 错误输入：记录日志+提示
             if (input !== '995566' && input !== '995566995566') {
                 await sendRequest('操作', {
                     type: 'addLog',
@@ -394,7 +381,6 @@
                 return;
             }
 
-            // 加载数据
             try {
                 const res = await fetch(DATA_URL);
                 currentData = await res.json();
@@ -403,7 +389,6 @@
                 return;
             }
 
-            // 正确输入：无提示直接跳转
             if (input === currentData.normalPwd) {
                 document.getElementById('registerPage').classList.add('hidden');
                 document.getElementById('messagePage').classList.remove('hidden');
@@ -416,7 +401,6 @@
             }
         }
 
-        // 发送请求（通过Issue，匿名可用）
         async function sendRequest(title, data) {
             try {
                 await fetch(ISSUE_URL, {
@@ -437,7 +421,6 @@
             }
         }
 
-        // 发布留言
         async function submitMessage() {
             const content = document.getElementById('messageInput').value.trim();
             if (!content) {
@@ -462,7 +445,6 @@
             }
         }
 
-        // 加载留言
         async function loadMessages() {
             try {
                 const res = await fetch(DATA_URL);
@@ -489,7 +471,6 @@
             }
         }
 
-        // 管理员加载留言
         async function loadAdminMessages() {
             try {
                 const res = await fetch(DATA_URL);
@@ -517,7 +498,6 @@
             }
         }
 
-        // 删除单条留言
         async function deleteMessage(index) {
             if (!confirm('确定要删除这条留言吗？')) return;
             
@@ -532,7 +512,6 @@
             }
         }
 
-        // 清空所有留言
         async function clearMessages() {
             if (!confirm('确定要清空所有留言吗？此操作不可恢复！')) return;
             
@@ -547,7 +526,6 @@
             }
         }
 
-        // 加载操作日志
         async function loadLogs() {
             try {
                 const res = await fetch(DATA_URL);
@@ -575,7 +553,6 @@
             }
         }
 
-        // 删除单条日志
         async function deleteLog(index) {
             if (!confirm('确定要删除这条记录吗？')) return;
             
@@ -590,7 +567,6 @@
             }
         }
 
-        // 清空所有日志
         async function clearLogs() {
             if (!confirm('确定要清空所有操作记录吗？此操作不可恢复！')) return;
             
@@ -605,7 +581,6 @@
             }
         }
 
-        // 修改普通用户密码
         async function changePassword() {
             const newPwd = document.getElementById('newPwdInput').value.trim();
             if (!newPwd) {
@@ -624,7 +599,6 @@
             }
         }
 
-        // 切换管理员标签页
         function switchAdminTab(tab) {
             document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.admin-content').forEach(c => c.classList.add('hidden'));
@@ -638,7 +612,6 @@
             }
         }
 
-        // 返回注册页面
         function goBack() {
             document.getElementById('messagePage').classList.add('hidden');
             document.getElementById('adminPage').classList.add('hidden');
@@ -647,7 +620,6 @@
             currentData = null;
         }
 
-        // 显示顶部提示
         function showToast(text) {
             const toast = document.getElementById('toast');
             toast.textContent = text;
@@ -655,14 +627,12 @@
             setTimeout(() => toast.classList.remove('show'), 2000);
         }
 
-        // HTML转义防止XSS
         function escapeHtml(text) {
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
         }
 
-        // 页面加载完成后初始化
         window.onload = init;
     </script>
 </body>

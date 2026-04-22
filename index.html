@@ -24,13 +24,18 @@
     .item{padding:12px 0;border-bottom:1px solid #f0f0f0}
     .item-content{font-size:16px;margin-bottom:6px;word-break:break-word}
     .item-info{font-size:12px;color:#999;display:flex;gap:8px;flex-wrap:wrap}
+    
+    /* 🔥 新增：新消息通知栏 */
+    .notice{position:fixed;top:0;left:0;width:100%;background:#007aff;color:#fff;text-align:center;padding:8px 0;display:none;z-index:999}
+    
     .toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:10px 20px;border-radius:8px;z-index:999;opacity:0;transition:opacity 0.3s}
     .toast.show{opacity:1}
     .pwd-box{margin-bottom:12px;padding:12px;border:1px solid #eee;border-radius:12px}
 </style>
 </head>
 <body>
-<div id="toast" class="toast"></div>
+<!-- 🔥 新增：顶部新消息通知 -->
+<div class="notice" id="notice">📢 有新消息发布！</div>
 
 <div class="container">
     <div id="page-login" class="page">
@@ -86,6 +91,10 @@
 const TOKEN = "a902530aaec03576bef1e8dd8f73ccb2";
 const API = "https://gitee.com/api/v5/repos/LukeT/messages-store/contents/messages.json";
 
+// 🔥 新增：自动刷新定时器 + 最后一条消息标记
+let refreshTimer = null;
+let lastMsgTime = "";
+
 // ==================== 工具函数 ====================
 function showToast(text) {
     const toast = document.getElementById("toast");
@@ -94,10 +103,18 @@ function showToast(text) {
     setTimeout(() => toast.classList.remove("show"), 2000);
 }
 
+// 🔥 新增：显示/隐藏新消息通知
+function showNotice() {
+    document.getElementById("notice").style.display = "block";
+    setTimeout(() => {
+        document.getElementById("notice").style.display = "none";
+    }, 3000);
+}
+
 function encode(str) { return btoa(unescape(encodeURIComponent(str))); }
 function decode(b64) { return decodeURIComponent(escape(atob(b64))); }
 
-// 本地获取设备（100%稳定）
+// 本地获取设备
 function getDevice() {
     const ua = navigator.userAgent;
     if (ua.includes("iPhone")) return "苹果手机";
@@ -107,7 +124,7 @@ function getDevice() {
     return "电脑";
 }
 
-// 点击后才获取IP+位置（绝不阻塞页面）
+// 获取IP信息
 async function getIPInfo() {
     let ip = "未知IP", location = "未知位置";
     try {
@@ -120,7 +137,7 @@ async function getIPInfo() {
     return {ip, location, device: getDevice()};
 }
 
-// 带超时的Gitee数据请求
+// 加载数据
 async function loadData() {
     try {
         const controller = new AbortController();
@@ -129,35 +146,63 @@ async function loadData() {
         const json = await res.json();
         return {sha: json.sha, data: JSON.parse(decode(json.content))};
     } catch (e) {
-        return {
-            sha: "",
-            data: {normalPwd: "995566", adminPwd: "995566995566", messages: [], logs: []}
-        };
+        return {sha: "", data: {normalPwd: "995566", adminPwd: "995566995566", messages: [], logs: []}};
     }
 }
 
+// 保存数据
 async function saveData(sha, data) {
     try {
         await fetch(API, {
             method: "PUT",
             headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({
-                access_token: TOKEN,
-                content: encode(JSON.stringify(data, null, 2)),
-                sha: sha,
-                message: "update"
-            })
+            body: JSON.stringify({access_token: TOKEN, content: encode(JSON.stringify(data, null, 2)), sha, message: "update"})
         });
         return true;
-    } catch (e) {
-        return false;
+    } catch (e) { return false; }
+}
+
+// ==================== 🔥 新增：自动刷新功能 ====================
+async function autoRefresh() {
+    const { data } = await loadData();
+    // 判断是否有新消息
+    if (data.messages.length > 0) {
+        const newLastTime = data.messages[0].time;
+        if (lastMsgTime !== "" && newLastTime !== lastMsgTime) {
+            showNotice(); // 弹出新消息通知
+        }
+        lastMsgTime = newLastTime;
     }
+    // 刷新页面内容
+    if (!document.getElementById("page-user").classList.contains("hidden")) {
+        renderMsg();
+    }
+    if (!document.getElementById("page-admin").classList.contains("hidden")) {
+        renderAdmin();
+    }
+}
+
+// 启动/停止刷新
+function startRefresh() {
+    stopRefresh();
+    refreshTimer = setInterval(autoRefresh, 5000); // 5秒刷新一次
+}
+function stopRefresh() {
+    if (refreshTimer) clearInterval(refreshTimer);
 }
 
 // ==================== 页面切换 ====================
 function showPage(id) {
     document.querySelectorAll(".page").forEach(p => p.classList.add("hidden"));
     document.getElementById(id).classList.remove("hidden");
+    
+    // 登录页停止刷新，用户/管理员页启动刷新
+    if (id === "page-login") {
+        stopRefresh();
+        lastMsgTime = "";
+    } else {
+        startRefresh();
+    }
 }
 
 function goBack() {
@@ -180,37 +225,24 @@ function showLog() {
     document.getElementById("admin-log").style.display = "block";
 }
 
-// ==================== 核心：权限验证（点按钮立刻有反应） ====================
+// ==================== 登录 ====================
 async function checkLogin() {
     const val = document.getElementById("login-input").value.trim();
     
-    // 先判断权限，立刻跳转，绝不等待网络
-    if (val === "995566") {
-        showPage("page-user");
-        renderMsg();
-    } else if (val === "995566995566") {
-        showPage("page-admin");
-        renderAdmin();
-    } else {
-        alert("请输入正确的手机号");
-    }
+    if (val === "995566") { showPage("page-user"); renderMsg(); }
+    else if (val === "995566995566") { showPage("page-admin"); renderAdmin(); }
+    else { alert("请输入正确的手机号"); }
 
-    // 后台异步记录日志，不影响用户体验
+    // 后台记录日志
     (async () => {
         const info = await getIPInfo();
         const {sha, data} = await loadData();
-        data.logs.unshift({
-            phone: val,
-            ip: info.ip,
-            location: info.location,
-            device: info.device,
-            time: new Date().toLocaleString()
-        });
+        data.logs.unshift({phone: val, ip: info.ip, location: info.location, device: info.device, time: new Date().toLocaleString()});
         await saveData(sha, data);
     })();
 }
 
-// ==================== 普通用户功能 ====================
+// ==================== 普通用户 ====================
 async function renderMsg() {
     const {data} = await loadData();
     document.getElementById("msg-list").innerHTML = data.messages.map(m => `
@@ -231,25 +263,17 @@ async function postMsg() {
     
     const info = await getIPInfo();
     const {sha, data} = await loadData();
-    data.messages.unshift({
-        content: content,
-        ip: info.ip,
-        location: info.location,
-        device: info.device,
-        time: new Date().toLocaleString()
-    });
+    data.messages.unshift({content: content, ip: info.ip, location: info.location, device: info.device, time: new Date().toLocaleString()});
     
     const success = await saveData(sha, data);
     if (success) {
         document.getElementById("msg-input").value = "";
         renderMsg();
         showToast("留言发布成功");
-    } else {
-        showToast("发布失败，请重试");
-    }
+    } else { showToast("发布失败，请重试"); }
 }
 
-// ==================== 管理员功能 ====================
+// ==================== 管理员 ====================
 async function renderAdmin() {
     const {data} = await loadData();
     
@@ -278,67 +302,16 @@ async function renderAdmin() {
     </div>`).join('');
 }
 
-async function delMsg(i) {
-    const {sha, data} = await loadData();
-    data.messages.splice(i, 1);
-    const success = await saveData(sha, data);
-    if (success) {
-        renderAdmin();
-        showToast("删除成功");
-    } else {
-        showToast("删除失败，请重试");
-    }
-}
-
-async function delLog(i) {
-    const {sha, data} = await loadData();
-    data.logs.splice(i, 1);
-    const success = await saveData(sha, data);
-    if (success) {
-        renderAdmin();
-        showToast("删除成功");
-    } else {
-        showToast("删除失败，请重试");
-    }
-}
-
-async function clearMsg() {
-    const {sha, data} = await loadData();
-    data.messages = [];
-    const success = await saveData(sha, data);
-    if (success) {
-        renderAdmin();
-        showToast("留言已清空");
-    } else {
-        showToast("清空失败，请重试");
-    }
-}
-
-async function clearLog() {
-    const {sha, data} = await loadData();
-    data.logs = [];
-    const success = await saveData(sha, data);
-    if (success) {
-        renderAdmin();
-        showToast("记录已清空");
-    } else {
-        showToast("清空失败，请重试");
-    }
-}
-
+async function delMsg(i) { const {sha, data} = await loadData(); data.messages.splice(i, 1); await saveData(sha, data); renderAdmin(); showToast("删除成功"); }
+async function delLog(i) { const {sha, data} = await loadData(); data.logs.splice(i, 1); await saveData(sha, data); renderAdmin(); showToast("删除成功"); }
+async function clearMsg() { const {sha, data} = await loadData(); data.messages = []; await saveData(sha, data); renderAdmin(); showToast("留言已清空"); }
+async function clearLog() { const {sha, data} = await loadData(); data.logs = []; await saveData(sha, data); renderAdmin(); showToast("记录已清空"); }
 async function updatePwd() {
     const newPwd = document.getElementById("new-pwd").value.trim();
     if (!newPwd) return;
-    
-    const {sha, data} = await loadData();
-    data.normalPwd = newPwd;
+    const {sha, data} = await loadData(); data.normalPwd = newPwd;
     const success = await saveData(sha, data);
-    if (success) {
-        togglePwdBox();
-        showToast("密码修改成功");
-    } else {
-        showToast("修改失败，请重试");
-    }
+    if (success) { togglePwdBox(); showToast("密码修改成功"); }
 }
 </script>
 </body>

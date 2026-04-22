@@ -86,7 +86,7 @@ const API = "https://gitee.com/api/v5/repos/LukeT/messages-store/contents/messag
 let refreshTimer = null;
 let lastMsgTime = "";
 
-// ==================== 完整保留：设备识别 ====================
+// ==================== 设备识别 ====================
 function getDevice() {
     const ua = navigator.userAgent;
     if (ua.includes("iPhone")) return "苹果手机";
@@ -96,7 +96,7 @@ function getDevice() {
     return "未知设备";
 }
 
-// ==================== 完整保留：IP与位置（不卡按钮） ====================
+// ==================== IP与位置 ====================
 function getClientIP() {
     return `192.168.${Math.floor(Math.random()*254)+1}.${Math.floor(Math.random()*253)+1}`;
 }
@@ -152,7 +152,7 @@ async function saveData(sha, data) {
     }
 }
 
-// ==================== 完整保留：跨设备自动刷新 ====================
+// ==================== 跨设备自动刷新 ====================
 async function autoSync() {
     const { data } = await loadData();
     if (data.messages.length > 0) {
@@ -207,10 +207,13 @@ function showLog() {
 async function checkLogin() {
     const val = document.getElementById("login-input").value.trim();
 
+    // 🔥 修复：登录后立刻加载留言
     if (val === "995566") {
         showPage("page-user");
+        renderMsg(); // 登录即加载
     } else if (val === "995566995566") {
         showPage("page-admin");
+        renderAdmin(); // 登录即加载
     } else {
         alert("请输入正确的手机号");
     }

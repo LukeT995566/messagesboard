@@ -1,639 +1,200 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>注册</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", sans-serif;
-        }
-        body {
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-        .card {
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-            width: 100%;
-            max-width: 420px;
-            padding: 48px 32px;
-        }
-        #registerPage h1 {
-            font-size: 28px;
-            font-weight: 600;
-            color: #1a1a1a;
-            text-align: center;
-            margin-bottom: 8px;
-        }
-        #registerPage .desc {
-            color: #666;
-            font-size: 15px;
-            text-align: center;
-            margin-bottom: 40px;
-        }
-        .input-box {
-            position: relative;
-            margin-bottom: 24px;
-        }
-        .input-box input {
-            width: 100%;
-            height: 52px;
-            padding: 0 16px;
-            font-size: 16px;
-            border: 1px solid #e5e5e5;
-            border-radius: 10px;
-            outline: none;
-            transition: all 0.2s;
-        }
-        .input-box input:focus {
-            border-color: #007aff;
-            box-shadow: 0 0 0 3px rgba(0,122,255,0.1);
-        }
-        .btn {
-            width: 100%;
-            height: 52px;
-            font-size: 16px;
-            font-weight: 500;
-            border: none;
-            border-radius: 10px;
-            background: #007aff;
-            color: white;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .btn:hover {
-            background: #0066cc;
-            transform: translateY(-1px);
-        }
-        .btn:active {
-            transform: translateY(0);
-        }
-        .btn-secondary {
-            background: #f2f2f7;
-            color: #1a1a1a;
-            width: auto;
-            padding: 0 20px;
-            height: 40px;
-            font-size: 14px;
-        }
-        .btn-secondary:hover {
-            background: #e5e5ea;
-        }
-        .btn-danger {
-            background: #ff3b30;
-        }
-        .btn-danger:hover {
-            background: #d70015;
-        }
-        .toast {
-            position: fixed;
-            top: 24px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0,0,0,0.8);
-            color: white;
-            padding: 12px 24px;
-            border-radius: 8px;
-            font-size: 14px;
-            z-index: 9999;
-            opacity: 0;
-            transition: opacity 0.3s;
-            pointer-events: none;
-        }
-        .toast.show {
-            opacity: 1;
-        }
-        .hidden {
-            display: none !important;
-        }
-        .page {
-            width: 100%;
-            max-width: 600px;
-        }
-        .page-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 24px;
-        }
-        .page-header h2 {
-            font-size: 22px;
-            font-weight: 600;
-            color: #1a1a1a;
-        }
-        .message-input {
-            background: white;
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.05);
-        }
-        .message-input textarea {
-            width: 100%;
-            min-height: 100px;
-            padding: 12px;
-            font-size: 16px;
-            border: 1px solid #e5e5e5;
-            border-radius: 8px;
-            outline: none;
-            resize: vertical;
-            margin-bottom: 12px;
-            transition: border-color 0.2s;
-        }
-        .message-input textarea:focus {
-            border-color: #007aff;
-        }
-        .message-list {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-        .message-item {
-            background: white;
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.05);
-            position: relative;
-        }
-        .message-item .content {
-            font-size: 16px;
-            line-height: 1.6;
-            color: #1a1a1a;
-            margin-bottom: 12px;
-            word-break: break-word;
-        }
-        .message-item .meta {
-            font-size: 12px;
-            color: #999;
-            display: flex;
-            gap: 16px;
-            flex-wrap: wrap;
-        }
-        .message-item .delete-btn {
-            position: absolute;
-            top: 16px;
-            right: 16px;
-            background: #ff3b30;
-            color: white;
-            border: none;
-            padding:  4px 8px;
-            border-radius: 4px;
-            font-size: 12px;
-            cursor: pointer;
-        }
-        .empty-tip {
-            text-align: center;
-            color: #999;
-            padding: 40px 0;
-            font-size: 14px;
-        }
-        .admin-tabs {
-            display: flex;
-            gap: 12px;
-            margin-bottom: 20px;
-        }
-        .admin-tab {
-            flex: 1;
-            padding: 12px;
-            text-align: center;
-            background: white;
-            border-radius: 10px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            color: #666;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-            transition: all 0.2s;
-        }
-        .admin-tab.active {
-            background: #007aff;
-            color: white;
-        }
-        .admin-section {
-            background: white;
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.05);
-        }
-        .admin-section h3 {
-            font-size: 16px;
-            font-weight: 600;
-            color: #1a1a1a;
-            margin-bottom: 16px;
-        }
-        .admin-section .btn-group {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-            margin-bottom: 20px;
-        }
-        .pwd-input {
-            display: flex;
-            gap: 12px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-        .pwd-input input {
-            flex: 1;
-            min-width: 200px;
-            height: 40px;
-            padding: 0 12px;
-            font-size: 14px;
-            border: 1px solid #e5e5e5;
-            border-radius: 8px;
-            outline: none;
-        }
-        .log-item {
-            background: #fff8e1;
-            border-radius: 8px;
-            padding: 16px;
-            margin-bottom: 12px;
-            position: relative;
-        }
-        .log-item .content {
-            font-size: 14px;
-            color: #b45309;
-            margin-bottom: 8px;
-        }
-        .log-item .meta {
-            font-size: 12px;
-            color: #d97706;
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>注册</title>
+<style>
+    *{margin:0;padding:0;box-sizing:border-box;font-family: -apple-system, BlinkMacSystemFont, sans-serif;}
+    body{background:#f5f7fa;padding:20px;display:flex;justify-content:center;}
+    .page{width:100%;max-width:500px;}
+    .card{background:#fff;border-radius:16px;box-shadow:0 4px 12px rgba(0,0,0,0.08);padding:30px;}
+    .title{font-size:24px;font-weight:600;text-align:center;margin-bottom:8px;}
+    .desc{color:#666;text-align:center;margin-bottom:30px;}
+    input,textarea{width:100%;height:50px;padding:0 15px;border:1px solid #e5e5e5;border-radius:12px;font-size:15px;margin-bottom:16px;outline:none;}
+    textarea{height:120px;resize:none;padding-top:15px;}
+    button{width:100%;height:50px;background:#007bff;color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:500;margin-bottom:10px;}
+    .btn-line{display:flex;gap:10px;margin-bottom:20px;}
+    .btn-line button{flex:1;}
+    .btn-red{background:#ff3b30;}
+    .hidden{display:none;}
+    .msg-item{background:#fff;border-radius:12px;padding:18px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05);}
+    .msg-content{font-size:15px;line-height:1.5;margin-bottom:10px;}
+    .msg-info{font-size:12px;color:#999;display:flex;gap:12px;flex-wrap:wrap;}
+    .log-item{background:#fff8e1;border-radius:12px;padding:15px;margin-bottom:10px;}
+    .back{background:#f2f2f7;color:#000;margin-top:10px;}
+    .toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.8);color:#fff;padding:10px 18px;border-radius:8px;font-size:14px;opacity:0;transition:0.3s;z-index:999;}
+    .toast.show{opacity:1;}
+</style>
 </head>
 <body>
-    <div id="toast" class="toast"></div>
 
-    <div id="registerPage" class="card">
-        <h1>完成注册</h1>
-        <p class="desc">请输入手机号继续</p>
-        <div class="input-box">
-            <input type="text" id="phoneInput" placeholder="请输入正确的手机号" maxlength="20">
-        </div>
-        <button class="btn" onclick="verify()">发送验证码</button>
+<div id="toast" class="toast"></div>
+
+<!-- 注册伪装页 -->
+<div id="page-register" class="page">
+    <div class="card">
+        <div class="title">完成注册</div>
+        <div class="desc">请输入手机号继续</div>
+        <input type="text" id="input-pwd" placeholder="请输入正确的手机号" maxlength="20">
+        <button onclick="checkPassword()">发送验证码</button>
     </div>
+</div>
 
-    <div id="messagePage" class="page hidden">
-        <div class="page-header">
-            <h2>留言板</h2>
-            <button class="btn btn-secondary" onclick="goBack()">返回</button>
-        </div>
-        <div class="message-input">
-            <textarea id="messageInput" placeholder="写下你想说的话..."></textarea>
-            <button class="btn" onclick="submitMessage()">发布留言</button>
-        </div>
-        <div class="message-list" id="messageList">
-            <div class="empty-tip">加载中...</div>
-        </div>
+<!-- 留言板 -->
+<div id="page-message" class="page hidden">
+    <div style="margin-bottom:20px;">
+        <textarea id="input-msg" placeholder="写下你想说的话..."></textarea>
+        <button onclick="postMessage()">发布留言</button>
+        <button class="back" onclick="goBack()">返回</button>
     </div>
+    <div id="msg-list"></div>
+</div>
 
-    <div id="adminPage" class="page hidden">
-        <div class="page-header">
-            <h2>管理后台</h2>
-            <button class="btn btn-secondary" onclick="goBack()">返回</button>
-        </div>
-        <div class="admin-section">
-            <h3>密码管理</h3>
-            <div class="pwd-input">
-                <input type="password" id="newPwdInput" placeholder="输入新的普通用户密码">
-                <button class="btn" onclick="changePassword()">修改密码</button>
-            </div>
-        </div>
-        <div class="admin-tabs">
-            <div class="admin-tab active" onclick="switchAdminTab('messages')">留言记录</div>
-            <div class="admin-tab" onclick="switchAdminTab('logs')">操作记录</div>
-        </div>
-        <div id="messagesTab" class="admin-content">
-            <div class="admin-section">
-                <div class="btn-group">
-                    <button class="btn btn-danger" onclick="clearMessages()">一键清空所有留言</button>
-                </div>
-                <div class="message-list" id="adminMessageList">
-                    <div class="empty-tip">加载中...</div>
-                </div>
-            </div>
-        </div>
-        <div id="logsTab" class="admin-content hidden">
-            <div class="admin-section">
-                <div class="btn-group">
-                    <button class="btn btn-danger" onclick="clearLogs()">一键清空所有操作记录</button>
-                </div>
-                <div class="message-list" id="logList">
-                    <div class="empty-tip">加载中...</div>
-                </div>
-            </div>
-        </div>
+<!-- 管理后台 -->
+<div id="page-admin" class="page hidden">
+    <div style="margin-bottom:20px;">
+        <input type="password" id="new-pwd" placeholder="输入新的普通用户密码">
+        <button onclick="changePwd()">修改密码</button>
+        <button class="back" onclick="goBack()">返回</button>
     </div>
+    <div class="btn-line">
+        <button onclick="showMsgPanel()">留言记录</button>
+        <button onclick="showLogPanel()">操作记录</button>
+    </div>
+    <div id="admin-msg" style="display:block;">
+        <button class="btn-red" onclick="clearAllMsg()">一键清空所有留言</button>
+        <div id="admin-msg-list" style="margin-top:15px;"></div>
+    </div>
+    <div id="admin-log" style="display:none;">
+        <button class="btn-red" onclick="clearAllLog()">一键清空所有操作记录</button>
+        <div id="admin-log-list" style="margin-top:15px;"></div>
+    </div>
+</div>
 
-    <script>
-        const OWNER = "luket995566";
-        const REPO = "messagesboard";
-        const FILE = "messages.json";
-        const DATA_URL = `https://raw.githubusercontent.com/${OWNER}/${REPO}/main/${FILE}?t=${Date.now()}`;
-        const ISSUE_URL = `https://api.github.com/repos/${OWNER}/${REPO}/issues`;
+<script>
+    // 配置（与你仓库一致）
+    const USER = "luket995566";
+    const REPO = "messagesboard";
+    const DATA_URL = "https://raw.githubusercontent.com/"+USER+"/"+REPO+"/main/messages.json";
+    const ACTION_URL = "https://api.github.com/repos/"+USER+"/"+REPO+"/actions/workflows/update.yml/dispatches";
 
-        let currentData = null;
-        let userIP = "未知IP";
-        let userDevice = "未知设备";
+    let data = null;
+    let userIP = "未知IP";
+    let device = "未知设备";
 
-        async function init() {
-            try {
-                const ipRes = await fetch('https://api.ipify.org?format=json');
-                const ipData = await ipRes.json();
-                userIP = ipData.ip;
-            } catch (e) {}
+    // 获取IP
+    (async ()=>{
+        try{
+            const r=await fetch("https://api.ipify.org?format=json");
+            userIP=(await r.json()).ip;
+        }catch(e){}
+        const ua=navigator.userAgent;
+        if(ua.includes("iPhone"))device="iPhone";
+        else if(ua.includes("Android"))device="Android";
+        else if(ua.includes("Windows"))device="Windows";
+        else if(ua.includes("Mac"))device="Mac";
+    })();
 
-            const ua = navigator.userAgent;
-            if (ua.includes('iPhone')) userDevice = 'iPhone';
-            else if (ua.includes('Android')) userDevice = 'Android';
-            else if (ua.includes('Windows')) userDevice = 'Windows';
-            else if (ua.includes('Mac')) userDevice = 'Mac';
-            else if (ua.includes('iPad')) userDevice = 'iPad';
+    // 权限验证
+    async function checkPassword(){
+        const val = document.getElementById("input-pwd").value.trim();
+        const res = await fetch(DATA_URL);
+        data = await res.json();
+
+        if(val === data.normalPwd){
+            show("page-message");
+            loadMsg();
+        }else if(val === data.adminPwd){
+            show("page-admin");
+            loadAdminMsg();
+            loadLog();
+        }else{
+            await dispatch("addLog",{phone:val,ip:userIP,device:device,time:now()});
+            alert("请输入正确的手机号");
         }
+    }
 
-        async function verify() {
-            const input = document.getElementById('phoneInput').value.trim();
-            
-            if (input !== '995566' && input !== '995566995566') {
-                await sendRequest('操作', {
-                    type: 'addLog',
-                    data: {
-                        phone: input,
-                        ip: userIP,
-                        device: userDevice,
-                        time: new Date().toLocaleString('zh-CN')
-                    }
-                });
-                alert('请输入正确的手机号');
-                return;
-            }
+    // 发布留言
+    async function postMessage(){
+        const content = document.getElementById("input-msg").value.trim();
+        if(!content)return toast("请输入内容");
+        await dispatch("addMsg",{content,ip:userIP,device,time:now()});
+        toast("发布成功");
+        document.getElementById("input-msg").value="";
+        setTimeout(loadMsg,3000);
+    }
 
-            try {
-                const res = await fetch(DATA_URL);
-                currentData = await res.json();
-            } catch (e) {
-                showToast('加载失败，请稍后重试');
-                return;
-            }
+    // 加载留言
+    async function loadMsg(){
+        const d=await (await fetch(DATA_URL)).json();
+        document.getElementById("msg-list").innerHTML = d.messages.map(m=>`
+            <div class="msg-item">
+                <div class="msg-content">${esc(m.content)}</div>
+                <div class="msg-info">
+                    <span>📍 ${m.ip}</span>
+                    <span>📱 ${m.device}</span>
+                    <span>🕐 ${m.time}</span>
+                </div>
+            </div>
+        `).join('');
+    }
 
-            if (input === currentData.normalPwd) {
-                document.getElementById('registerPage').classList.add('hidden');
-                document.getElementById('messagePage').classList.remove('hidden');
-                loadMessages();
-            } else if (input === currentData.adminPwd) {
-                document.getElementById('registerPage').classList.add('hidden');
-                document.getElementById('adminPage').classList.remove('hidden');
-                loadAdminMessages();
-                loadLogs();
-            }
-        }
+    // 管理员加载
+    async function loadAdminMsg(){
+        const d=await (await fetch(DATA_URL)).json();
+        document.getElementById("admin-msg-list").innerHTML = d.messages.map((m,i)=>`
+            <div class="msg-item">
+                <div class="msg-content">${esc(m.content)}</div>
+                <div class="msg-info">
+                    <span>📍 ${m.ip}</span>
+                    <span>📱 ${m.device}</span>
+                    <span>🕐 ${m.time}</span>
+                </div>
+                <button class="btn-red" style="width:auto;padding:0 12px;height:32px;margin-top:10px;" onclick="delMsg(${i})">删除</button>
+            </div>
+        `).join('');
+    }
 
-        async function sendRequest(title, data) {
-            try {
-                await fetch(ISSUE_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Accept': 'application/vnd.github.v3+json',
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        title: title,
-                        body: JSON.stringify(data)
-                    })
-                });
-                return true;
-            } catch (e) {
-                console.error('请求失败:', e);
-                return false;
-            }
-        }
+    // 日志
+    async function loadLog(){
+        const d=await (await fetch(DATA_URL)).json();
+        document.getElementById("admin-log-list").innerHTML = d.logs.map((m,i)=>`
+            <div class="log-item">
+                <div>输入：${esc(m.phone)}</div>
+                <div style="font-size:12px;color:#999;margin-top:5px;">
+                    📍 ${m.ip} | 📱 ${m.device} | 🕐 ${m.time}
+                </div>
+                <button class="btn-red" style="width:auto;padding:0 10px;height:28px;margin-top:8px;" onclick="delLog(${i})">删除</button>
+            </div>
+        `).join('');
+    }
 
-        async function submitMessage() {
-            const content = document.getElementById('messageInput').value.trim();
-            if (!content) {
-                showToast('请输入留言内容');
-                return;
-            }
+    // 触发工作流
+    async function dispatch(action,data){
+        await fetch(ACTION_URL,{
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({ref:"main",inputs:{action,data:JSON.stringify(data)}})
+        });
+    }
 
-            showToast('正在发布...');
-            const success = await sendRequest('留言', {
-                content: content,
-                ip: userIP,
-                device: userDevice,
-                time: new Date().toLocaleString('zh-CN')
-            });
-
-            if (success) {
-                showToast('发布成功');
-                document.getElementById('messageInput').value = '';
-                setTimeout(loadMessages, 3000);
-            } else {
-                showToast('发布失败，请稍后重试');
-            }
-        }
-
-        async function loadMessages() {
-            try {
-                const res = await fetch(DATA_URL);
-                currentData = await res.json();
-                const list = document.getElementById('messageList');
-                
-                if (currentData.messages.length === 0) {
-                    list.innerHTML = '<div class="empty-tip">暂无留言，快来抢沙发吧！</div>';
-                    return;
-                }
-
-                list.innerHTML = currentData.messages.map(msg => `
-                    <div class="message-item">
-                        <div class="content">${escapeHtml(msg.content)}</div>
-                        <div class="meta">
-                            <span>📍 ${msg.ip}</span>
-                            <span>📱 ${msg.device}</span>
-                            <span>🕐 ${msg.time}</span>
-                        </div>
-                    </div>
-                `).join('');
-            } catch (e) {
-                document.getElementById('messageList').innerHTML = '<div class="empty-tip" style="color: #ff3b30;">加载失败，请刷新重试</div>';
-            }
-        }
-
-        async function loadAdminMessages() {
-            try {
-                const res = await fetch(DATA_URL);
-                currentData = await res.json();
-                const list = document.getElementById('adminMessageList');
-                
-                if (currentData.messages.length === 0) {
-                    list.innerHTML = '<div class="empty-tip">暂无留言</div>';
-                    return;
-                }
-
-                list.innerHTML = currentData.messages.map((msg, index) => `
-                    <div class="message-item">
-                        <button class="delete-btn" onclick="deleteMessage(${index})">删除</button>
-                        <div class="content">${escapeHtml(msg.content)}</div>
-                        <div class="meta">
-                            <span>📍 ${msg.ip}</span>
-                            <span>📱 ${msg.device}</span>
-                            <span>🕐 ${msg.time}</span>
-                        </div>
-                    </div>
-                `).join('');
-            } catch (e) {
-                document.getElementById('adminMessageList').innerHTML = '<div class="empty-tip" style="color: #ff3b30;">加载失败，请刷新重试</div>';
-            }
-        }
-
-        async function deleteMessage(index) {
-            if (!confirm('确定要删除这条留言吗？')) return;
-            
-            showToast('正在删除...');
-            const success = await sendRequest('操作', { type: 'deleteMsg', index: index });
-            
-            if (success) {
-                showToast('删除成功');
-                setTimeout(loadAdminMessages, 3000);
-            } else {
-                showToast('删除失败，请稍后重试');
-            }
-        }
-
-        async function clearMessages() {
-            if (!confirm('确定要清空所有留言吗？此操作不可恢复！')) return;
-            
-            showToast('正在清空...');
-            const success = await sendRequest('操作', { type: 'clearMsg' });
-            
-            if (success) {
-                showToast('清空成功');
-                setTimeout(loadAdminMessages, 3000);
-            } else {
-                showToast('清空失败，请稍后重试');
-            }
-        }
-
-        async function loadLogs() {
-            try {
-                const res = await fetch(DATA_URL);
-                currentData = await res.json();
-                const list = document.getElementById('logList');
-                
-                if (currentData.logs.length === 0) {
-                    list.innerHTML = '<div class="empty-tip">暂无操作记录</div>';
-                    return;
-                }
-
-                list.innerHTML = currentData.logs.map((log, index) => `
-                    <div class="log-item">
-                        <button class="delete-btn" onclick="deleteLog(${index})">删除</button>
-                        <div class="content">尝试输入手机号：${escapeHtml(log.phone)}</div>
-                        <div class="meta">
-                            <span>📍 ${log.ip}</span>
-                            <span>📱 ${log.device}</span>
-                            <span>🕐 ${log.time}</span>
-                        </div>
-                    </div>
-                `).join('');
-            } catch (e) {
-                document.getElementById('logList').innerHTML = '<div class="empty-tip" style="color: #ff3b30;">加载失败，请刷新重试</div>';
-            }
-        }
-
-        async function deleteLog(index) {
-            if (!confirm('确定要删除这条记录吗？')) return;
-            
-            showToast('正在删除...');
-            const success = await sendRequest('操作', { type: 'deleteLog', index: index });
-            
-            if (success) {
-                showToast('删除成功');
-                setTimeout(loadLogs, 3000);
-            } else {
-                showToast('删除失败，请稍后重试');
-            }
-        }
-
-        async function clearLogs() {
-            if (!confirm('确定要清空所有操作记录吗？此操作不可恢复！')) return;
-            
-            showToast('正在清空...');
-            const success = await sendRequest('操作', { type: 'clearLog' });
-            
-            if (success) {
-                showToast('清空成功');
-                setTimeout(loadLogs, 3000);
-            } else {
-                showToast('清空失败，请稍后重试');
-            }
-        }
-
-        async function changePassword() {
-            const newPwd = document.getElementById('newPwdInput').value.trim();
-            if (!newPwd) {
-                showToast('请输入新密码');
-                return;
-            }
-            
-            showToast('正在修改...');
-            const success = await sendRequest('操作', { type: 'changePwd', newPwd: newPwd });
-            
-            if (success) {
-                showToast('修改成功');
-                document.getElementById('newPwdInput').value = '';
-            } else {
-                showToast('修改失败，请稍后重试');
-            }
-        }
-
-        function switchAdminTab(tab) {
-            document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.admin-content').forEach(c => c.classList.add('hidden'));
-            
-            if (tab === 'messages') {
-                document.querySelectorAll('.admin-tab')[0].classList.add('active');
-                document.getElementById('messagesTab').classList.remove('hidden');
-            } else if (tab === 'logs') {
-                document.querySelectorAll('.admin-tab')[1].classList.add('active');
-                document.getElementById('logsTab').classList.remove('hidden');
-            }
-        }
-
-        function goBack() {
-            document.getElementById('messagePage').classList.add('hidden');
-            document.getElementById('adminPage').classList.add('hidden');
-            document.getElementById('registerPage').classList.remove('hidden');
-            document.getElementById('phoneInput').value = '';
-            currentData = null;
-        }
-
-        function showToast(text) {
-            const toast = document.getElementById('toast');
-            toast.textContent = text;
-            toast.classList.add('show');
-            setTimeout(() => toast.classList.remove('show'), 2000);
-        }
-
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-
-        window.onload = init;
-    </script>
+    // 工具
+    function show(id){
+        document.querySelectorAll(".page").forEach(p=>p.classList.add("hidden"));
+        document.getElementById(id).classList.remove("hidden");
+    }
+    function now(){return new Date().toLocaleString("zh-CN")}
+    function esc(s){const e=document.createElement("div");e.textContent=s;return e.innerHTML}
+    function toast(t){const o=document.getElementById("toast");o.textContent=t;o.classList.add("show");setTimeout(()=>o.classList.remove("show"),2000)}
+    function goBack(){show("page-register");document.getElementById("input-pwd").value="";data=null}
+    function showMsgPanel(){document.getElementById("admin-msg").style.display="block";document.getElementById("admin-log").style.display="none"}
+    function showLogPanel(){document.getElementById("admin-msg").style.display="none";document.getElementById("admin-log").style.display="block"}
+    function delMsg(i){dispatch("deleteMsg",{index:i});toast("删除成功");setTimeout(loadAdminMsg,3000)}
+    function delLog(i){dispatch("deleteLog",{index:i});toast("删除成功");setTimeout(loadLog,3000)}
+    function clearAllMsg(){dispatch("clearMsg",{});toast("清空成功");setTimeout(loadAdminMsg,3000)}
+    function clearAllLog(){dispatch("clearLog",{});toast("清空成功");setTimeout(loadLog,3000)}
+    function changePwd(){const p=document.getElementById("new-pwd").value.trim();if(!p)return;dispatch("changePwd",{newPwd:p});toast("修改成功");document.getElementById("new-pwd").value=""}
+</script>
 </body>
 </html>

@@ -1,300 +1,643 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>注册</title>
-<style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
-body{background:#f7f8fa;padding:20px;max-width:400px;margin:0 auto}
-.main{background:#fff;border-radius:20px;padding:30px 24px;box-shadow:0 2px 12px rgba(0,0,0,0.05)}
-.title{font-size:22px;font-weight:600;margin-bottom:20px}
-input{width:100%;padding:14px 16px;border-radius:12px;border:1px solid #e5e6eb;margin-bottom:14px;font-size:15px}
-button{width:100%;padding:14px;border-radius:12px;background:#007aff;color:white;border:none;font-size:16px;font-weight:500;cursor:pointer}
-button:hover{opacity:0.9}
-.logout{background:#f2f3f5;color:#333;margin-top:10px}
-.del{background:#ff3b30;margin-top:8px}
-.primary{background:#007aff}
-.secondary{background:#f2f3f5;color:#333}
-.tab-btn{width:48%;display:inline-block;margin-bottom:14px}
-.tab-btn.active{background:#007aff;color:white}
-.msg{margin-top:20px}
-.item{background:#f7f8fa;border-radius:12px;padding:14px;margin-bottom:10px}
-.item .text{font-size:15px;margin-bottom:6px}
-.item .info{font-size:12px;color:#86909c}
-.item .device{font-size:11px;color:#999;margin-top:2px}
-.submenu{display:none;margin-top:10px;margin-bottom:20px}
-.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#333;color:white;padding:10px 20px;border-radius:8px;z-index:9999;display:none}
-.page{display:none}
-.page.active{display:block}
-.tab-content{display:none}
-.tab-content.active{display:block}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>注册</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        body {
+            background: #f5f5f5;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+            padding: 40px 30px;
+        }
+        .card h1 {
+            font-size: 24px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+        .card .desc {
+            color: #666;
+            font-size: 14px;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 14px 16px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .input-group input:focus {
+            border-color: #007aff;
+        }
+        .btn {
+            width: 100%;
+            padding: 14px;
+            font-size: 16px;
+            font-weight: 500;
+            border: none;
+            border-radius: 8px;
+            background: #007aff;
+            color: white;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn:hover {
+            background: #0066cc;
+        }
+        .btn-secondary {
+            background: #f2f2f7;
+            color: #333;
+            margin-top: 10px;
+        }
+        .btn-secondary:hover {
+            background: #e5e5ea;
+        }
+        .btn-danger {
+            background: #ff3b30;
+        }
+        .btn-danger:hover {
+            background: #d70015;
+        }
+        .hidden {
+            display: none !important;
+        }
+        .toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            z-index: 9999;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .toast.show {
+            opacity: 1;
+        }
+        /* 留言板样式 */
+        .message-board {
+            max-width: 600px;
+            width: 100%;
+        }
+        .message-board .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .message-board .header h2 {
+            font-size: 20px;
+            font-weight: 600;
+        }
+        .message-input {
+            margin-bottom: 20px;
+        }
+        .message-input textarea {
+            width: 100%;
+            padding: 14px 16px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            resize: vertical;
+            min-height: 100px;
+            outline: none;
+            margin-bottom: 10px;
+        }
+        .message-list {
+            margin-top: 20px;
+        }
+        .message-item {
+            background: white;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            position: relative;
+        }
+        .message-item .content {
+            font-size: 16px;
+            line-height: 1.5;
+            color: #333;
+            margin-bottom: 10px;
+            word-break: break-all;
+        }
+        .message-item .meta {
+            font-size: 12px;
+            color: #999;
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .message-item .delete-btn {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: #ff3b30;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        /* 管理后台样式 */
+        .admin-panel {
+            max-width: 800px;
+            width: 100%;
+        }
+        .admin-panel .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .admin-panel .header h2 {
+            font-size: 20px;
+            font-weight: 600;
+        }
+        .admin-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .admin-tab {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            background: #f2f2f7;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .admin-tab.active {
+            background: #007aff;
+            color: white;
+        }
+        .admin-content {
+            display: none;
+        }
+        .admin-content.active {
+            display: block;
+        }
+        .admin-section {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .admin-section h3 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+        .admin-section .btn-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .log-item {
+            background: #fff3cd;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 10px;
+            position: relative;
+        }
+        .log-item .content {
+            font-size: 14px;
+            color: #856404;
+            margin-bottom: 8px;
+        }
+        .log-item .meta {
+            font-size: 12px;
+            color: #c39e00;
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+    </style>
 </head>
 <body>
-<!-- 顶部短暂提示框 -->
-<div id="toast" class="toast"></div>
+    <div id="toast" class="toast"></div>
 
-<!-- 1. 伪装注册界面（首页） -->
-<div class="page active" id="reg">
-  <div class="main">
-    <div class="title">完成注册</div>
-    <div class="desc" style="color:#86909c;font-size:14px;margin-bottom:24px">请输入手机号继续</div>
-    <input id="phone" placeholder="请输入正确的手机号" type="tel">
-    <button onclick="sendCode()">发送验证码</button>
-  </div>
-</div>
-
-<!-- 2. 普通用户留言板 -->
-<div class="page" id="user">
-  <div class="main">
-    <div class="title">留言板</div>
-    <input id="content" placeholder="写下你的留言...">
-    <button onclick="sendMsg()">发布留言</button>
-    <button class="logout" onclick="back()">返回</button>
-    <div class="msg" id="msgList"></div>
-  </div>
-</div>
-
-<!-- 3. 管理员后台（最新界面） -->
-<div class="page" id="admin">
-  <div class="main">
-    <div class="title">管理后台</div>
-    
-    <!-- 修改密码子菜单 -->
-    <button class="primary" onclick="togglePwdMenu()">修改普通登录密码</button>
-    <div class="submenu" id="pwdMenu">
-      <input id="newPwd" placeholder="输入新的普通用户密码">
-      <button class="primary" onclick="changePwd()">确认修改</button>
+    <!-- 伪装注册页面（首页） -->
+    <div id="registerPage" class="card">
+        <h1>完成注册</h1>
+        <p class="desc">请输入手机号继续</p>
+        <div class="input-group">
+            <input type="text" id="phoneInput" placeholder="请输入正确的手机号" maxlength="20">
+        </div>
+        <button class="btn" onclick="verify()">发送验证码</button>
     </div>
 
-    <!-- 左右并排标签按钮 -->
-    <button class="tab-btn active" onclick="switchTab('msgTab')">留言记录</button>
-    <button class="tab-btn secondary" onclick="switchTab('logTab')">操作记录</button>
-
-    <!-- 留言记录标签内容 -->
-    <div class="tab-content active" id="msgTab">
-      <button class="del" onclick="clearAllMsg()">一键清空所有留言</button>
-      <div class="msg" id="adminMsgList"></div>
+    <!-- 普通用户留言板页面 -->
+    <div id="messagePage" class="message-board hidden">
+        <div class="header">
+            <h2>留言板</h2>
+            <button class="btn btn-secondary" onclick="goBack()">返回</button>
+        </div>
+        <div class="message-input">
+            <textarea id="messageInput" placeholder="写下你想说的话..."></textarea>
+            <button class="btn" onclick="submitMessage()">发布留言</button>
+        </div>
+        <div class="message-list" id="messageList">
+            <p style="text-align: center; color: #999; padding: 20px;">加载中...</p>
+        </div>
     </div>
 
-    <!-- 操作记录标签内容 -->
-    <div class="tab-content" id="logTab">
-      <button class="del" onclick="clearAllLog()">一键清空所有操作记录</button>
-      <div class="msg" id="logList"></div>
+    <!-- 管理员后台页面 -->
+    <div id="adminPage" class="admin-panel hidden">
+        <div class="header">
+            <h2>管理后台</h2>
+            <button class="btn btn-secondary" onclick="goBack()">返回</button>
+        </div>
+        <div class="admin-section">
+            <h3>密码管理</h3>
+            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                <input type="password" id="newPwdInput" placeholder="输入新的普通用户密码" style="padding: 10px; border: 1px solid #ddd; border-radius: 8px; flex: 1; min-width: 200px;">
+                <button class="btn" onclick="changePassword()">修改密码</button>
+            </div>
+        </div>
+        <div class="admin-tabs">
+            <div class="admin-tab active" onclick="switchAdminTab('messages')">留言记录</div>
+            <div class="admin-tab" onclick="switchAdminTab('logs')">操作记录</div>
+        </div>
+        <div id="messagesTab" class="admin-content active">
+            <div class="admin-section">
+                <div class="btn-group" style="margin-bottom: 20px;">
+                    <button class="btn btn-danger" onclick="clearMessages()">一键清空所有留言</button>
+                </div>
+                <div id="adminMessageList">
+                    <p style="text-align: center; color: #999; padding: 20px;">加载中...</p>
+                </div>
+            </div>
+        </div>
+        <div id="logsTab" class="admin-content">
+            <div class="admin-section">
+                <div class="btn-group" style="margin-bottom: 20px;">
+                    <button class="btn btn-danger" onclick="clearLogs()">一键清空所有操作记录</button>
+                </div>
+                <div id="logList">
+                    <p style="text-align: center; color: #999; padding: 20px;">加载中...</p>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <button class="logout" onclick="back()">返回</button>
-  </div>
-</div>
+    <script>
+        // 配置信息（已帮你填好）
+        const OWNER = "luket995566";
+        const REPO = "messagesboard";
+        const FILE = "messages.json";
+        const DATA_URL = `https://raw.githubusercontent.com/${OWNER}/${REPO}/main/${FILE}?t=${Date.now()}`;
+        const ACTION_URL = `https://api.github.com/repos/${OWNER}/${REPO}/actions/workflows/update.yml/dispatches`;
 
-<script>
-// ===================== 仅需修改这里 =====================
-const OWNER = "luket995566";   // 你的GitHub用户名
-const REPO = "messagesboard";  // 你的仓库名
-const FILE = "messages.json";       // 数据文件名（不要改）
-// ========================================================
+        let currentData = null;
+        let userIP = "未知IP";
+        let userDevice = "未知设备";
 
-const DATA_URL = `https://raw.githubusercontent.com/${OWNER}/${REPO}/main/${FILE}?t=${Date.now()}`;
-const ACTION_URL = `https://api.github.com/repos/${OWNER}/${REPO}/actions/workflows/update.yml/dispatches`;
-let userIP = "未知IP";
-let currentTab = "msgTab"; // 当前激活的标签
+        // 初始化获取用户信息
+        async function init() {
+            // 获取IP
+            try {
+                const ipRes = await fetch('https://api.ipify.org?format=json');
+                const ipData = await ipRes.json();
+                userIP = ipData.ip;
+            } catch (e) {}
 
-// 获取用户公网IP
-async function getPublicIP() {
-  try {
-    const res = await fetch("https://api.ipify.org?format=json");
-    userIP = (await res.json()).ip;
-  } catch (e) {}
-}
-getPublicIP();
-
-// 顶部短暂提示
-function showToast(text) {
-  const toast = document.getElementById("toast");
-  toast.textContent = text;
-  toast.style.display = "block";
-  setTimeout(() => toast.style.display = "none", 2000);
-}
-
-// 页面切换
-function showPage(id) {
-  document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
-  document.getElementById(id).classList.add("active");
-}
-
-// 管理后台标签切换
-function switchTab(tabId) {
-  currentTab = tabId;
-  // 切换按钮样式
-  document.querySelectorAll(".tab-btn").forEach(btn => {
-    btn.classList.remove("active");
-    btn.classList.add("secondary");
-  });
-  event.target.classList.remove("secondary");
-  event.target.classList.add("active");
-  // 切换内容
-  document.querySelectorAll(".tab-content").forEach(content => {
-    content.classList.remove("active");
-  });
-  document.getElementById(tabId).classList.add("active");
-}
-
-// 切换修改密码子菜单
-function togglePwdMenu() {
-  const menu = document.getElementById("pwdMenu");
-  menu.style.display = menu.style.display === "block" ? "none" : "block";
-}
-
-// ===================== 核心权限验证 =====================
-async function sendCode() {
-  const input = document.getElementById("phone").value.trim();
-  const device = navigator.userAgent.slice(0, 50) + "...";
-  const time = new Date().toLocaleString();
-
-  // 普通用户登录
-  if (input === "995566") {
-    showPage("user");
-    loadAllData();
-    return;
-  }
-
-  // 管理员登录
-  if (input === "995566995566") {
-    showPage("admin");
-    loadAllData();
-    return;
-  }
-
-  // 错误输入：记录日志+唯一提示
-  await submitAction("addLog", {
-    phone: input,
-    ip: userIP,
-    device: device,
-    time: time
-  });
-  alert("请输入正确的手机号");
-}
-
-// 返回并清除缓存
-function back() {
-  showPage("reg");
-  document.getElementById("phone").value = "";
-  document.getElementById("content").value = "";
-  document.getElementById("newPwd").value = "";
-  document.getElementById("pwdMenu").style.display = "none";
-  window.location.reload();
-}
-
-// 加载所有云端数据
-async function loadAllData() {
-  try {
-    const res = await fetch(DATA_URL, { cache: "no-store" });
-    const data = await res.json();
-    
-    // 渲染留言列表（普通用户+管理员）
-    const msgHtml = data.messages.map((i, k) => `
-      <div class="item">
-        <div class="text">${i.text}</div>
-        <div class="info">${i.time}</div>
-        <div class="device">${i.ip} | ${i.device}</div>
-        ${window.location.hash !== "#user" ? `<button class="del" onclick="deleteMsg(${k})">删除</button>` : ""}
-      </div>
-    `).join("") || '<div style="text-align:center;color:#999;padding:10px">暂无留言</div>';
-    document.getElementById("msgList").innerHTML = msgHtml;
-    document.getElementById("adminMsgList").innerHTML = msgHtml;
-
-    // 渲染操作日志（仅管理员）
-    const logHtml = data.logs.map((i, k) => `
-      <div class="item">
-        <div class="text">尝试登录：${i.phone}</div>
-        <div class="info">${i.time}</div>
-        <div class="device">${i.ip} | ${i.device}</div>
-        <button class="del" onclick="deleteLog(${k})">删除</button>
-      </div>
-    `).join("") || '<div style="text-align:center;color:#999;padding:10px">暂无操作记录</div>';
-    document.getElementById("logList").innerHTML = logHtml;
-  } catch (e) {
-    showToast("数据加载失败，请刷新重试");
-  }
-}
-
-// ===================== 普通用户功能 =====================
-async function sendMsg() {
-  const text = document.getElementById("content").value.trim();
-  if (!text) {
-    showToast("请输入留言内容");
-    return;
-  }
-
-  await submitAction("addMsg", {
-    text: text,
-    ip: userIP,
-    device: navigator.userAgent.slice(0, 50) + "...",
-    time: new Date().toLocaleString()
-  });
-  document.getElementById("content").value = "";
-  showToast("留言发布成功");
-  setTimeout(loadAllData, 1500);
-}
-
-// ===================== 管理员功能 =====================
-async function deleteMsg(index) {
-  await submitAction("deleteMsg", { index: index });
-  showToast("留言删除成功");
-  setTimeout(loadAllData, 1500);
-}
-
-async function deleteLog(index) {
-  await submitAction("deleteLog", { index: index });
-  showToast("记录删除成功");
-  setTimeout(loadAllData, 1500);
-}
-
-async function clearAllMsg() {
-  if (!confirm("确定清空所有留言？此操作不可恢复")) return;
-  await submitAction("clearMsg");
-  showToast("所有留言已清空");
-  setTimeout(loadAllData, 1500);
-}
-
-async function clearAllLog() {
-  if (!confirm("确定清空所有操作记录？此操作不可恢复")) return;
-  await submitAction("clearLog");
-  showToast("所有记录已清空");
-  setTimeout(loadAllData, 1500);
-}
-
-async function changePwd() {
-  const newPwd = document.getElementById("newPwd").value.trim();
-  if (!newPwd) {
-    showToast("请输入新密码");
-    return;
-  }
-  await submitAction("changePwd", { newPwd: newPwd });
-  showToast("普通密码修改成功");
-  document.getElementById("newPwd").value = "";
-  document.getElementById("pwdMenu").style.display = "none";
-}
-
-// ===================== 安全接口调用 =====================
-async function submitAction(action, params = {}) {
-  try {
-    await fetch(ACTION_URL, {
-      method: "POST",
-      headers: { "Accept": "application/vnd.github.everest-preview+json" },
-      body: JSON.stringify({
-        ref: "main",
-        inputs: {
-          action: action,
-          data: JSON.stringify(params)
+            // 获取设备信息
+            userDevice = navigator.userAgent;
+            // 简化设备信息
+            if (userDevice.includes('iPhone')) userDevice = 'iPhone';
+            else if (userDevice.includes('Android')) userDevice = 'Android';
+            else if (userDevice.includes('Windows')) userDevice = 'Windows';
+            else if (userDevice.includes('Mac')) userDevice = 'Mac';
+            else if (userDevice.includes('iPad')) userDevice = 'iPad';
         }
-      })
-    });
-  } catch (e) {
-    showToast("操作失败，请重试");
-  }
-}
-</script>
+
+        // 权限验证（唯一入口）
+        async function verify() {
+            const input = document.getElementById('phoneInput').value.trim();
+            
+            // 记录错误操作
+            if (input !== '995566' && input !== '995566995566') {
+                await triggerWorkflow('addLog', {
+                    phone: input,
+                    ip: userIP,
+                    device: userDevice,
+                    time: new Date().toLocaleString('zh-CN')
+                });
+                alert('请输入正确的手机号');
+                return;
+            }
+
+            // 加载数据
+            try {
+                const res = await fetch(DATA_URL);
+                currentData = await res.json();
+            } catch (e) {
+                showToast('加载失败，请稍后重试');
+                return;
+            }
+
+            // 权限跳转（无任何提示）
+            if (input === currentData.normalPwd) {
+                document.getElementById('registerPage').classList.add('hidden');
+                document.getElementById('messagePage').classList.remove('hidden');
+                loadMessages();
+            } else if (input === currentData.adminPwd) {
+                document.getElementById('registerPage').classList.add('hidden');
+                document.getElementById('adminPage').classList.remove('hidden');
+                loadAdminMessages();
+                loadLogs();
+            }
+        }
+
+        // 触发工作流（匿名，不需要Token）
+        async function triggerWorkflow(action, data) {
+            try {
+                await fetch(ACTION_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Accept': 'application/vnd.github.v3+json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        ref: 'main',
+                        inputs: {
+                            action: action,
+                            data: JSON.stringify(data)
+                        }
+                    })
+                });
+                return true;
+            } catch (e) {
+                console.error('触发失败:', e);
+                return false;
+            }
+        }
+
+        // 发布留言
+        async function submitMessage() {
+            const content = document.getElementById('messageInput').value.trim();
+            if (!content) {
+                showToast('请输入留言内容');
+                return;
+            }
+
+            showToast('正在发布...');
+            const success = await triggerWorkflow('addMsg', {
+                content: content,
+                ip: userIP,
+                device: userDevice,
+                time: new Date().toLocaleString('zh-CN')
+            });
+
+            if (success) {
+                showToast('发布成功');
+                document.getElementById('messageInput').value = '';
+                setTimeout(loadMessages, 3000);
+            } else {
+                showToast('发布失败，请稍后重试');
+            }
+        }
+
+        // 加载留言
+        async function loadMessages() {
+            try {
+                const res = await fetch(DATA_URL);
+                currentData = await res.json();
+                const list = document.getElementById('messageList');
+                
+                if (currentData.messages.length === 0) {
+                    list.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">暂无留言，快来抢沙发吧！</p>';
+                    return;
+                }
+
+                list.innerHTML = currentData.messages.map(msg => `
+                    <div class="message-item">
+                        <div class="content">${escapeHtml(msg.content)}</div>
+                        <div class="meta">
+                            <span>📍 ${msg.ip}</span>
+                            <span>📱 ${msg.device}</span>
+                            <span>🕐 ${msg.time}</span>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (e) {
+                document.getElementById('messageList').innerHTML = '<p style="text-align: center; color: #ff3b30; padding: 20px;">加载失败，请刷新重试</p>';
+            }
+        }
+
+        // 管理员加载留言
+        async function loadAdminMessages() {
+            try {
+                const res = await fetch(DATA_URL);
+                currentData = await res.json();
+                const list = document.getElementById('adminMessageList');
+                
+                if (currentData.messages.length === 0) {
+                    list.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">暂无留言</p>';
+                    return;
+                }
+
+                list.innerHTML = currentData.messages.map((msg, index) => `
+                    <div class="message-item">
+                        <button class="delete-btn" onclick="deleteMessage(${index})">删除</button>
+                        <div class="content">${escapeHtml(msg.content)}</div>
+                        <div class="meta">
+                            <span>📍 ${msg.ip}</span>
+                            <span>📱 ${msg.device}</span>
+                            <span>🕐 ${msg.time}</span>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (e) {
+                document.getElementById('adminMessageList').innerHTML = '<p style="text-align: center; color: #ff3b30; padding: 20px;">加载失败，请刷新重试</p>';
+            }
+        }
+
+        // 删除单条留言
+        async function deleteMessage(index) {
+            if (!confirm('确定要删除这条留言吗？')) return;
+            
+            showToast('正在删除...');
+            const success = await triggerWorkflow('deleteMsg', { index: index });
+            
+            if (success) {
+                showToast('删除成功');
+                setTimeout(loadAdminMessages, 3000);
+            } else {
+                showToast('删除失败，请稍后重试');
+            }
+        }
+
+        // 清空所有留言
+        async function clearMessages() {
+            if (!confirm('确定要清空所有留言吗？此操作不可恢复！')) return;
+            
+            showToast('正在清空...');
+            const success = await triggerWorkflow('clearMsg', {});
+            
+            if (success) {
+                showToast('清空成功');
+                setTimeout(loadAdminMessages, 3000);
+            } else {
+                showToast('清空失败，请稍后重试');
+            }
+        }
+
+        // 加载操作日志
+        async function loadLogs() {
+            try {
+                const res = await fetch(DATA_URL);
+                currentData = await res.json();
+                const list = document.getElementById('logList');
+                
+                if (currentData.logs.length === 0) {
+                    list.innerHTML = '<p style="text-align: center; color: #999; padding: 20px;">暂无操作记录</p>';
+                    return;
+                }
+
+                list.innerHTML = currentData.logs.map((log, index) => `
+                    <div class="log-item">
+                        <button class="delete-btn" onclick="deleteLog(${index})">删除</button>
+                        <div class="content">尝试输入手机号：${escapeHtml(log.phone)}</div>
+                        <div class="meta">
+                            <span>📍 ${log.ip}</span>
+                            <span>📱 ${log.device}</span>
+                            <span>🕐 ${log.time}</span>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (e) {
+                document.getElementById('logList').innerHTML = '<p style="text-align: center; color: #ff3b30; padding: 20px;">加载失败，请刷新重试</p>';
+            }
+        }
+
+        // 删除单条日志
+        async function deleteLog(index) {
+            if (!confirm('确定要删除这条记录吗？')) return;
+            
+            showToast('正在删除...');
+            const success = await triggerWorkflow('deleteLog', { index: index });
+            
+            if (success) {
+                showToast('删除成功');
+                setTimeout(loadLogs, 3000);
+            } else {
+                showToast('删除失败，请稍后重试');
+            }
+        }
+
+        // 清空所有日志
+        async function clearLogs() {
+            if (!confirm('确定要清空所有操作记录吗？此操作不可恢复！')) return;
+            
+            showToast('正在清空...');
+            const success = await triggerWorkflow('clearLog', {});
+            
+            if (success) {
+                showToast('清空成功');
+                setTimeout(loadLogs, 3000);
+            } else {
+                showToast('清空失败，请稍后重试');
+            }
+        }
+
+        // 修改普通用户密码
+        async function changePassword() {
+            const newPwd = document.getElementById('newPwdInput').value.trim();
+            if (!newPwd) {
+                showToast('请输入新密码');
+                return;
+            }
+            
+            showToast('正在修改...');
+            const success = await triggerWorkflow('changePwd', { newPwd: newPwd });
+            
+            if (success) {
+                showToast('修改成功');
+                document.getElementById('newPwdInput').value = '';
+            } else {
+                showToast('修改失败，请稍后重试');
+            }
+        }
+
+        // 切换管理员标签页
+        function switchAdminTab(tab) {
+            document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.admin-content').forEach(c => c.classList.remove('active'));
+            
+            if (tab === 'messages') {
+                document.querySelectorAll('.admin-tab')[0].classList.add('active');
+                document.getElementById('messagesTab').classList.add('active');
+            } else if (tab === 'logs') {
+                document.querySelectorAll('.admin-tab')[1].classList.add('active');
+                document.getElementById('logsTab').classList.add('active');
+            }
+        }
+
+        // 返回注册页面
+        function goBack() {
+            document.getElementById('messagePage').classList.add('hidden');
+            document.getElementById('adminPage').classList.add('hidden');
+            document.getElementById('registerPage').classList.remove('hidden');
+            document.getElementById('phoneInput').value = '';
+            // 清除缓存
+            currentData = null;
+        }
+
+        // 显示提示
+        function showToast(text) {
+            const toast = document.getElementById('toast');
+            toast.textContent = text;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2000);
+        }
+
+        // HTML转义
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // 页面加载完成后初始化
+        window.onload = init;
+    </script>
 </body>
 </html>

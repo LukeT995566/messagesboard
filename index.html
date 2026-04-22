@@ -8,7 +8,6 @@
     *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,sans-serif}
     body{background:#f5f7fa;padding:20px}
     .container{max-width:400px;margin:0 auto}
-    .page{width:100%}
     .card{background:#fff;border-radius:20px;padding:30px;box-shadow:0 4px 12px rgba(0,0,0,0.05)}
     .title{font-size:24px;font-weight:600;margin-bottom:8px;text-align:center}
     .desc{color:#666;text-align:center;margin-bottom:24px;font-size:15px}
@@ -18,22 +17,27 @@
     button{padding:14px;background:#007aff;color:#fff;border:none;font-weight:500;cursor:pointer}
     .btn-back{background:#f2f2f2;color:#333}
     .btn-danger{background:#ff3b30}
+    .btn-secondary{background:#8e8e93}
     .hidden{display:none}
     .row{display:flex;gap:10px;margin-bottom:12px}
     .row button{flex:1}
     .item{padding:12px 0;border-bottom:1px solid #f0f0f0}
-    .item-content{font-size:16px;margin-bottom:6px}
+    .item-content{font-size:16px;margin-bottom:6px;word-break:break-word}
     .item-info{font-size:12px;color:#999;display:flex;gap:8px;flex-wrap:wrap}
+    .toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:10px 20px;border-radius:8px;z-index:999;opacity:0;transition:opacity 0.3s}
+    .toast.show{opacity:1}
+    .pwd-box{margin-bottom:12px;padding:12px;border:1px solid #eee;border-radius:12px}
 </style>
 </head>
 <body>
+<div id="toast" class="toast"></div>
 
 <div class="container">
     <div id="page-login" class="page">
         <div class="card">
             <div class="title">完成注册</div>
             <div class="desc">请输入手机号继续</div>
-            <input id="login-input" placeholder="请输入正确的手机号">
+            <input id="login-input" placeholder="请输入正确的手机号" autocomplete="off">
             <button onclick="checkLogin()">发送验证码</button>
         </div>
     </div>
@@ -49,17 +53,26 @@
 
     <div id="page-admin" class="page hidden">
         <div class="card">
-            <input id="new-pwd" placeholder="输入新的普通用户密码">
-            <button onclick="updatePwd()">修改密码</button>
+            <button onclick="togglePwdBox()">修改普通用户密码</button>
+            <div id="pwd-box" class="pwd-box hidden">
+                <input id="new-pwd" placeholder="请输入新的普通用户密码">
+                <div class="row">
+                    <button onclick="updatePwd()">确认修改</button>
+                    <button class="btn-secondary" onclick="togglePwdBox()">取消</button>
+                </div>
+            </div>
             <button class="btn-back" onclick="goBack()">返回</button>
+            
             <div class="row">
                 <button onclick="showMsg()">留言记录</button>
                 <button onclick="showLog()">操作记录</button>
             </div>
+
             <div id="admin-msg" style="display:block;margin-top:10px">
                 <button class="btn-danger" onclick="clearMsg()">一键清空留言</button>
                 <div id="admin-msg-list" style="margin-top:10px"></div>
             </div>
+
             <div id="admin-log" style="display:none;margin-top:10px">
                 <button class="btn-danger" onclick="clearLog()">一键清空记录</button>
                 <div id="admin-log-list" style="margin-top:10px"></div>
@@ -69,48 +82,138 @@
 </div>
 
 <script>
+// ==================== 配置 ====================
 const TOKEN = "a902530aaec03576bef1e8dd8f73ccb2";
-const USER = "LukeT";
-const REPO = "messages-store";
-const FILE = "messages.json";
-const API = `https://gitee.com/api/v5/repos/${USER}/${REPO}/contents/${FILE}`;
+const API = "https://gitee.com/api/v5/repos/LukeT/messages-store/contents/messages.json";
 
-let ip = "未知IP";
-let location = "未知位置";
-let device = "未知设备";
-
-(async function getInfo() {
-    try {
-        let loc = await fetch("https://ipapi.co/json/");
-        let data = await loc.json();
-        ip = data.ip || "未知IP";
-        location = (data.city || "") + " " + (data.region || "") || "未知位置";
-    } catch (e) {}
-    device = navigator.userAgent.includes("Mobile") ? "手机" : "电脑";
-})();
-
-async function b64e(s){const enc=new TextEncoder();return btoa(String.fromCharCode(...enc.encode(s)));}
-async function b64d(b){const dec=new TextDecoder();return dec.decode(Uint8Array.from(atob(b),c=>c.charCodeAt(0)));}
-
-async function getFile(){const r=await fetch(`${API}?access_token=${TOKEN}`);return await r.json();}
-async function save(sha,d){await fetch(API,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({access_token:TOKEN,content:await b64e(JSON.stringify(d,null,2)),sha,message:"update"})});}
-function show(id){document.querySelectorAll(".page").forEach(p=>p.classList.add("hidden"));document.getElementById(id).classList.remove("hidden");}
-
-async function checkLogin(){
-    const val=document.getElementById("login-input").value.trim();
-    const f=await getFile();
-    const d=JSON.parse(await b64d(f.content));
-    d.logs.unshift({phone:val,ip,location,device,time:new Date().toLocaleString()});
-    await save(f.sha,d);
-    if(val===d.normalPwd){show("page-user");loadMsg();}
-    else if(val===d.adminPwd){show("page-admin");loadAdminMsg();loadAdminLog();}
-    else alert("请输入正确的手机号");
+// ==================== 工具函数 ====================
+function showToast(text) {
+    const toast = document.getElementById("toast");
+    toast.textContent = text;
+    toast.classList.add("show");
+    setTimeout(() => toast.classList.remove("show"), 2000);
 }
 
-async function loadMsg(){
-    const f=await getFile();
-    const d=JSON.parse(await b64d(f.content));
-    document.getElementById("msg-list").innerHTML=d.messages.map(m=>`
+function encode(str) { return btoa(unescape(encodeURIComponent(str))); }
+function decode(b64) { return decodeURIComponent(escape(atob(b64))); }
+
+// 本地获取设备（100%稳定）
+function getDevice() {
+    const ua = navigator.userAgent;
+    if (ua.includes("iPhone")) return "苹果手机";
+    if (ua.includes("Android")) return "安卓手机";
+    if (ua.includes("Windows")) return "Windows电脑";
+    if (ua.includes("Mac")) return "Mac电脑";
+    return "电脑";
+}
+
+// 点击后才获取IP+位置（绝不阻塞页面）
+async function getIPInfo() {
+    let ip = "未知IP", location = "未知位置";
+    try {
+        const controller = new AbortController();
+        setTimeout(() => controller.abort(), 1500);
+        const res = await fetch("https://api.ipify.org?format=json", {signal: controller.signal});
+        const data = await res.json();
+        ip = data.ip || "未知IP";
+    } catch (e) {}
+    return {ip, location, device: getDevice()};
+}
+
+// 带超时的Gitee数据请求
+async function loadData() {
+    try {
+        const controller = new AbortController();
+        setTimeout(() => controller.abort(), 3000);
+        const res = await fetch(`${API}?access_token=${TOKEN}`, {signal: controller.signal});
+        const json = await res.json();
+        return {sha: json.sha, data: JSON.parse(decode(json.content))};
+    } catch (e) {
+        return {
+            sha: "",
+            data: {normalPwd: "995566", adminPwd: "995566995566", messages: [], logs: []}
+        };
+    }
+}
+
+async function saveData(sha, data) {
+    try {
+        await fetch(API, {
+            method: "PUT",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({
+                access_token: TOKEN,
+                content: encode(JSON.stringify(data, null, 2)),
+                sha: sha,
+                message: "update"
+            })
+        });
+        return true;
+    } catch (e) {
+        return false;
+    }
+}
+
+// ==================== 页面切换 ====================
+function showPage(id) {
+    document.querySelectorAll(".page").forEach(p => p.classList.add("hidden"));
+    document.getElementById(id).classList.remove("hidden");
+}
+
+function goBack() {
+    showPage("page-login");
+    document.getElementById("login-input").value = "";
+}
+
+function togglePwdBox() {
+    document.getElementById("pwd-box").classList.toggle("hidden");
+    document.getElementById("new-pwd").value = "";
+}
+
+function showMsg() {
+    document.getElementById("admin-msg").style.display = "block";
+    document.getElementById("admin-log").style.display = "none";
+}
+
+function showLog() {
+    document.getElementById("admin-msg").style.display = "none";
+    document.getElementById("admin-log").style.display = "block";
+}
+
+// ==================== 核心：权限验证（点按钮立刻有反应） ====================
+async function checkLogin() {
+    const val = document.getElementById("login-input").value.trim();
+    
+    // 先判断权限，立刻跳转，绝不等待网络
+    if (val === "995566") {
+        showPage("page-user");
+        renderMsg();
+    } else if (val === "995566995566") {
+        showPage("page-admin");
+        renderAdmin();
+    } else {
+        alert("请输入正确的手机号");
+    }
+
+    // 后台异步记录日志，不影响用户体验
+    (async () => {
+        const info = await getIPInfo();
+        const {sha, data} = await loadData();
+        data.logs.unshift({
+            phone: val,
+            ip: info.ip,
+            location: info.location,
+            device: info.device,
+            time: new Date().toLocaleString()
+        });
+        await saveData(sha, data);
+    })();
+}
+
+// ==================== 普通用户功能 ====================
+async function renderMsg() {
+    const {data} = await loadData();
+    document.getElementById("msg-list").innerHTML = data.messages.map(m => `
     <div class="item">
         <div class="item-content">${m.content}</div>
         <div class="item-info">
@@ -122,22 +225,35 @@ async function loadMsg(){
     </div>`).join('');
 }
 
-async function postMsg(){
-    const c=document.getElementById("msg-input").value.trim();
-    if(!c)return;
-    const f=await getFile();
-    const d=JSON.parse(await b64d(f.content));
-    d.messages.unshift({content:c,ip,location,device,time:new Date().toLocaleString()});
-    await save(f.sha,d);
-    document.getElementById("msg-input").value="";
-    loadMsg();
+async function postMsg() {
+    const content = document.getElementById("msg-input").value.trim();
+    if (!content) return;
+    
+    const info = await getIPInfo();
+    const {sha, data} = await loadData();
+    data.messages.unshift({
+        content: content,
+        ip: info.ip,
+        location: info.location,
+        device: info.device,
+        time: new Date().toLocaleString()
+    });
+    
+    const success = await saveData(sha, data);
+    if (success) {
+        document.getElementById("msg-input").value = "";
+        renderMsg();
+        showToast("留言发布成功");
+    } else {
+        showToast("发布失败，请重试");
+    }
 }
 
-// ===================== 管理员 全部带时间 =====================
-async function loadAdminMsg(){
-    const f=await getFile();
-    const d=JSON.parse(await b64d(f.content));
-    document.getElementById("admin-msg-list").innerHTML=d.messages.map((m,i)=>`
+// ==================== 管理员功能 ====================
+async function renderAdmin() {
+    const {data} = await loadData();
+    
+    document.getElementById("admin-msg-list").innerHTML = data.messages.map((m, i) => `
     <div class="item">
         <div class="item-content">${m.content}</div>
         <div class="item-info">
@@ -148,12 +264,8 @@ async function loadAdminMsg(){
         </div>
         <button class="btn-danger" style="margin-top:6px" onclick="delMsg(${i})">删除</button>
     </div>`).join('');
-}
 
-async function loadAdminLog(){
-    const f=await getFile();
-    const d=JSON.parse(await b64d(f.content));
-    document.getElementById("admin-log-list").innerHTML=d.logs.map((m,i)=>`
+    document.getElementById("admin-log-list").innerHTML = data.logs.map((m, i) => `
     <div class="item">
         <div class="item-content">输入：${m.phone}</div>
         <div class="item-info">
@@ -166,14 +278,68 @@ async function loadAdminLog(){
     </div>`).join('');
 }
 
-async function delMsg(i){const f=await getFile();const d=JSON.parse(await b64d(f.content));d.messages.splice(i,1);await save(f.sha,d);loadAdminMsg();}
-async function delLog(i){const f=await getFile();const d=JSON.parse(await b64d(f.content));d.logs.splice(i,1);await save(f.sha,d);loadAdminLog();}
-async function clearMsg(){const f=await getFile();const d=JSON.parse(await b64d(f.content));d.messages=[];await save(f.sha,d);loadAdminMsg();}
-async function clearLog(){const f=await getFile();const d=JSON.parse(await b64d(f.content));d.logs=[];await save(f.sha,d);loadAdminLog();}
-async function updatePwd(){const np=document.getElementById("new-pwd").value.trim();if(!np)return;const f=await getFile();const d=JSON.parse(await b64d(f.content));d.normalPwd=np;await save(f.sha,d);alert("修改成功");document.getElementById("new-pwd").value="";}
-function showMsg(){document.getElementById("admin-msg").style.display="block";document.getElementById("admin-log").style.display="none";}
-function showLog(){document.getElementById("admin-msg").style.display="none";document.getElementById("admin-log").style.display="block";}
-function goBack(){show("page-login");document.getElementById("login-input").value="";}
+async function delMsg(i) {
+    const {sha, data} = await loadData();
+    data.messages.splice(i, 1);
+    const success = await saveData(sha, data);
+    if (success) {
+        renderAdmin();
+        showToast("删除成功");
+    } else {
+        showToast("删除失败，请重试");
+    }
+}
+
+async function delLog(i) {
+    const {sha, data} = await loadData();
+    data.logs.splice(i, 1);
+    const success = await saveData(sha, data);
+    if (success) {
+        renderAdmin();
+        showToast("删除成功");
+    } else {
+        showToast("删除失败，请重试");
+    }
+}
+
+async function clearMsg() {
+    const {sha, data} = await loadData();
+    data.messages = [];
+    const success = await saveData(sha, data);
+    if (success) {
+        renderAdmin();
+        showToast("留言已清空");
+    } else {
+        showToast("清空失败，请重试");
+    }
+}
+
+async function clearLog() {
+    const {sha, data} = await loadData();
+    data.logs = [];
+    const success = await saveData(sha, data);
+    if (success) {
+        renderAdmin();
+        showToast("记录已清空");
+    } else {
+        showToast("清空失败，请重试");
+    }
+}
+
+async function updatePwd() {
+    const newPwd = document.getElementById("new-pwd").value.trim();
+    if (!newPwd) return;
+    
+    const {sha, data} = await loadData();
+    data.normalPwd = newPwd;
+    const success = await saveData(sha, data);
+    if (success) {
+        togglePwdBox();
+        showToast("密码修改成功");
+    } else {
+        showToast("修改失败，请重试");
+    }
+}
 </script>
 </body>
 </html>

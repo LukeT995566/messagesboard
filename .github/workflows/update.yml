@@ -1,62 +1,45 @@
-name: 自动处理留言和操作
+name: Update Messages Data
 on:
-  issues:
-    types: [opened]
+  workflow_dispatch:
+    inputs:
+      action:
+        required: true
+        type: string
+      data:
+        required: false
+        type: string
 
 jobs:
-  process:
+  update:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      issues: write
     steps:
       - uses: actions/checkout@v4
-      
-      - name: 初始化数据文件
-        run: |
-          if [ ! -f messages.json ]; then
-            echo '{"normalPwd":"995566","adminPwd":"995566995566","messages":[],"logs":[]}' > messages.json
-          fi
-      
-      - name: 处理请求
+      - name: Process
         uses: actions/github-script@v7
         with:
           script: |
             const fs = require('fs');
-            const data = JSON.parse(fs.readFileSync('messages.json', 'utf8'));
-            const issue = context.payload.issue;
-            const title = issue.title.trim();
-            const body = issue.body.trim();
+            const data = JSON.parse(fs.readFileSync('messages.json','utf8'));
+            const action = ${{ toJSON(inputs.action) }};
+            const d = ${{ toJSON(inputs.data) }} ? JSON.parse(${{ toJSON(inputs.data) }}) : {};
 
-            try {
-              if (title === '留言') {
-                const msg = JSON.parse(body);
-                data.messages.unshift(msg);
-              } else if (title === '操作') {
-                const op = JSON.parse(body);
-                switch (op.type) {
-                  case 'deleteMsg': data.messages.splice(op.index, 1); break;
-                  case 'clearMsg': data.messages = []; break;
-                  case 'deleteLog': data.logs.splice(op.index, 1); break;
-                  case 'clearLog': data.logs = []; break;
-                  case 'changePwd': data.normalPwd = op.newPwd; break;
-                  case 'addLog': data.logs.unshift(op.data); break;
-                }
-              }
-              fs.writeFileSync('messages.json', JSON.stringify(data, null, 2));
-            } catch (e) {}
+            switch(action){
+              case 'addMsg': data.messages.unshift(d); break;
+              case 'deleteMsg': data.messages.splice(d.index,1); break;
+              case 'clearMsg': data.messages = []; break;
+              case 'addLog': data.logs.unshift(d); break;
+              case 'deleteLog': data.logs.splice(d.index,1); break;
+              case 'clearLog': data.logs = []; break;
+              case 'changePwd': data.normalPwd = d.newPwd; break;
+            }
 
-            await github.rest.issues.update({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: issue.number,
-              state: 'closed'
-            });
-      
-      - name: 提交更新
+            fs.writeFileSync('messages.json', JSON.stringify(data,null,2));
+      - name: Push
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add messages.json
-          git commit -m "自动更新数据"
+          git commit -m "update"
           git push

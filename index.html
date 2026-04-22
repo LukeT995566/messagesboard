@@ -7,255 +7,171 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:Arial}
 body{background:#f5f7fa;padding:20px;max-width:400px;margin:0 auto}
-.card{background:#fff;padding:25px;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.06)}
-.title{text-align:center;font-size:21px;margin-bottom:20px}
-input,button{width:100%;padding:13px;margin:8px 0;border-radius:9px;border:1px solid #e1e4e8;font-size:15px}
-button{background:#007AFF;color:#fff;border:none;font-weight:500}
-.gray{background:#999}
+.card{background:#fff;padding:24px;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,0.06)}
+.title{text-align:center;font-size:20px;margin-bottom:20px}
+input,button{width:100%;padding:12px;margin:7px 0;border-radius:10px;border:1px solid #ddd;font-size:15px}
+button{background:#007AFF;color:white;border:none}
 #login,#board,#admin{display:none}
-.log-item{background:#fff;padding:14px;margin:10px 0;border-radius:8px;font-size:14px}
-.small{color:#666;font-size:12px;margin-top:5px}
-
-textarea {
-  width:100%;
-  padding:14px;
-  margin:8px 0;
-  border-radius:10px;
-  border:1px solid #e1e4e8;
-  font-size:15px;
-  resize:none;
-  min-height:100px;
-  font-family:Arial;
-}
-
-.del{background:#ff3b30;color:#fff;padding:6px 10px;border-radius:6px;font-size:12px;margin-top:8px;border:none;width:auto}
+.item{background:#fff;padding:14px;margin:10px 0;border-radius:10px}
+.small{font-size:12px;color:#888;margin-top:6px}
+textarea{width:100%;height:100px;padding:12px;border-radius:10px;border:1px solid #ddd;margin-top:8px}
+.del{background:#ff3b30;padding:6px 10px;border:none;border-radius:6px;font-size:12px;margin-top:8px}
 </style>
 </head>
 <body>
 
-<!-- 伪装注册界面 -->
 <div id="register" class="card">
   <div class="title">注册</div>
-  <input type="text" id="phone" placeholder="请输入手机号">
-  <input type="text" id="code" placeholder="请输入验证码">
+  <input id="phone" placeholder="手机号">
+  <input id="code" placeholder="验证码">
   <button onclick="getCode()">获取验证码</button>
-  <button onclick="doRegister()">注册</button>
+  <button onclick="reg()">注册</button>
 </div>
 
-<!-- 真实登录 -->
 <div id="login" class="card">
   <div class="title">登录</div>
-  <input type="password" id="pwd" placeholder="输入密码">
+  <input type="password" id="pwd" placeholder="密码">
   <button onclick="login()">登录</button>
 </div>
 
-<!-- 留言板 -->
 <div id="board">
   <div class="card">
     <div class="title">留言板</div>
-    <textarea id="content" placeholder="写下内容..."></textarea>
-    <button onclick="sendMsg()">发布留言</button>
-    <button style="background:#FF3B30" onclick="logout()">退出</button>
+    <textarea id="content" placeholder="输入内容..."></textarea>
+    <button onclick="send()">发布留言</button>
+    <button style="background:#ff3b30" onclick="logout()">退出</button>
   </div>
-  <div id="msgList"></div>
+  <div id="list"></div>
 </div>
 
-<!-- 管理员后台 -->
 <div id="admin" class="card">
-  <div class="title">操作记录</div>
-  <button style="background:#34C759" onclick="changePwd()">修改普通密码</button>
-  <button style="background:#FF3B30" onclick="clearAll()">清空所有记录</button>
+  <div class="title">管理后台</div>
+  <button onclick="clearAll()">清空全部记录</button>
   <button onclick="logout()">退出</button>
-  <div id="logList" style="margin-top:15px"></div>
+  <div id="logs"></div>
 </div>
 
 <script>
-// 防源码
-document.oncontextmenu = () => false;
-document.onkeydown = e => {
-  if(e.key==="F12"||(e.ctrlKey&&e.key==="u")||(e.ctrlKey&&e.shiftKey&&e.key==="i")) return false;
-};
+const API = "/api/save";
 
 window.addEventListener("pageshow", logout);
+document.oncontextmenu = () => false;
+document.onkeydown = e => {
+  if(e.key==="F12"||e.ctrlKey&&e.key=="u"||e.ctrlKey&&e.shiftKey&&e.key=="i") return false;
+};
 
-const ADMIN = "995566995566";
-let USER = "995566";
-
-// 获取IP + 地区
-async function getIpInfo() {
-  try {
-    let res = await fetch("https://ipapi.co/json/");
-    let data = await res.json();
-    return {
-      ip: data.ip || "未知IP",
-      loc: (data.region || "") + " " + (data.city || "") || "未知地区"
-    };
-  } catch (e) {
-    return { ip: "未知IP", loc: "未知地区" };
-  }
+function logout(){
+  register.style.display="block";
+  login.style.display=board.style.display=admin.style.display="none";
 }
 
-// 获取设备
-function getDevice() {
-  let ua = navigator.userAgent;
-  if (ua.match(/Android/i)) return "Android 手机";
-  if (ua.match(/iPhone|iPad/i)) return "iPhone/iPad";
-  if (ua.match(/Mac/i)) return "Mac 电脑";
-  if (ua.match(/Windows/i)) return "Windows 电脑";
-  return "未知设备";
-}
-
-// 存储
-function getLogs() {
-  return JSON.parse(localStorage.getItem("logs") || "[]");
-}
-function saveLogs(arr) {
-  localStorage.setItem("logs", JSON.stringify(arr));
-}
-
-// 写入日志（自动带IP、设备、地区、时间）
-async function addLog(type, phone, text) {
-  let ipInfo = await getIpInfo();
-  let device = getDevice();
-  let logs = getLogs();
-  logs.unshift({
-    type, phone, text,
-    ip: ipInfo.ip,
-    loc: ipInfo.loc,
-    device,
-    time: new Date().toLocaleString()
-  });
-  saveLogs(logs);
-}
-
-// 获取验证码
-function getCode() {
-  let phone = document.getElementById("phone").value;
-  addLog("获取验证码", phone, "");
+function getCode(){
+  log("获取验证码", phone.value);
   alert("请输入正确的手机号");
 }
 
-// 注册
-function doRegister() {
-  let phone = document.getElementById("phone").value;
-  let code = document.getElementById("code").value;
-  addLog("注册", phone, ""); // 不记录验证码
-
-  if (code === ADMIN || code === USER) {
-    document.getElementById("register").style.display = "none";
-    document.getElementById("login").style.display = "block";
-    document.getElementById("pwd").value = code;
-  } else {
+function reg(){
+  log("注册", phone.value);
+  if(code.value=="995566"||code.value=="995566995566"){
+    register.style.display="none";
+    login.style.display="block";
+    pwd.value = code.value;
+  }else{
     alert("请输入正确的手机号");
   }
 }
 
-function logout() {
-  document.getElementById("register").style.display = "block";
-  document.getElementById("login").style.display = "none";
-  document.getElementById("board").style.display = "none";
-  document.getElementById("admin").style.display = "none";
-}
-
-async function login() {
-  let p = document.getElementById("pwd").value;
-  if (p === ADMIN) {
-    document.getElementById("login").style.display = "none";
-    document.getElementById("admin").style.display = "block";
-    loadAdminLogs();
-  } else if (p === USER) {
-    document.getElementById("login").style.display = "none";
-    document.getElementById("board").style.display = "block";
+async function login(){
+  let p = pwd.value;
+  if(p=="995566995566"){
+    login.style.display="none";
+    admin.style.display="block";
+    loadAdmin();
+  }else if(p=="995566"){
+    login.style.display="none";
+    board.style.display="block";
     loadMsg();
-  } else {
+  }else{
     alert("请输入正确的手机号");
   }
 }
 
-// ================= 管理员日志（两组完全分开）=================
-function loadAdminLogs() {
-  let logs = getLogs();
-  let html = "";
-  logs.forEach((item, index) => {
-    if (item.type === "留言") {
-      // 留言组：只显示内容、IP、地区、设备、时间
-      html += `
-      <div class="log-item">
-        <strong>【留言记录】</strong><br>
-        内容：${item.text || "无"}<br>
-        IP：${item.ip}<br>
-        地区：${item.loc}<br>
-        设备：${item.device}<br>
-        <div class="small">时间：${item.time}</div>
-        <button class="del" onclick="delOne(${index})">删除本条</button>
-      </div>`;
-    } else {
-      // 注册操作组：显示操作、手机号、IP、地区、设备、时间
-      html += `
-      <div class="log-item">
-        <strong>【访问记录】${item.type}</strong><br>
-        手机号：${item.phone || "无"}<br>
-        IP：${item.ip}<br>
-        地区：${item.loc}<br>
-        设备：${item.device}<br>
-        <div class="small">时间：${item.time}</div>
-        <button class="del" onclick="delOne(${index})">删除本条</button>
-      </div>`;
-    }
+async function log(type, phone){
+  await fetch(API, {
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({type, phone})
   });
-  document.getElementById("logList").innerHTML = html || "<div style='text-align:center;color:#888'>暂无记录</div>";
 }
 
-// 删除单条
-function delOne(index) {
-  if (!confirm("确定删除这条记录？")) return;
-  let logs = getLogs();
-  logs.splice(index, 1);
-  saveLogs(logs);
-  loadAdminLogs();
-  loadMsg();
-}
-
-// 清空全部
-function clearAll() {
-  if (!confirm("确定清空所有记录？无法恢复！")) return;
-  localStorage.clear();
-  loadAdminLogs();
-  loadMsg();
-}
-
-// ================= 留言板显示（优化字体大小）=================
-function loadMsg() {
-  let logs = getLogs();
-  let html = "";
-  logs.forEach(item => {
-    if (item.type === "留言") {
-      html += `
-      <div class="log-item">
-        ${item.text}<br>
-        <div class="small">IP：${item.ip}｜地区：${item.loc}｜设备：${item.device}</div>
-        <div class="small">${item.time}</div>
-      </div>`;
-    }
+async function send(){
+  let t = content.value.trim();
+  if(!t)return alert("请输入内容");
+  await fetch(API, {
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({msg: t})
   });
-  document.getElementById("msgList").innerHTML = html || "<div style='text-align:center;color:#888'>暂无留言</div>";
-}
-
-async function sendMsg() {
-  let t = document.getElementById("content").value.trim();
-  if (!t) return alert("请输入内容");
-  await addLog("留言", "", t);
-  document.getElementById("content").value = "";
+  content.value = "";
   loadMsg();
 }
 
-// 修改密码
-function changePwd() {
-  let np = prompt("输入新普通密码：");
-  if (!np || np.length < 4) return alert("至少4位");
-  USER = np;
-  alert("修改成功！新密码：" + USER);
-  logout();
+async function loadMsg(){
+  let r = await fetch("/messages.json");
+  let j = await r.json();
+  let html = "";
+  j.messages.forEach(m => {
+    html += `
+    <div class="item">
+      ${m.text}
+      <div class="small">IP：${m.ip}</div>
+      <div class="small">${m.time}</div>
+    </div>`;
+  });
+  list.innerHTML = html || "<div class=small>暂无留言</div>";
+}
+
+async function loadAdmin(){
+  let r = await fetch("/messages.json");
+  let j = await r.json();
+  let html = "";
+  j.logs.forEach((log,i) => {
+    html += `
+    <div class="item">
+      <strong>${log.type}</strong><br>
+      手机号：${log.phone}<br>
+      <div class="small">IP：${log.ip}</div>
+      <div class="small">${log.time}</div>
+      <button class=del onclick="del(${i})">删除</button>
+    </div>`;
+  });
+  j.messages.forEach((msg,i) => {
+    html += `
+    <div class="item">
+      <strong>留言</strong><br>
+      ${msg.text}<br>
+      <div class="small">IP：${msg.ip}</div>
+      <div class="small">${msg.time}</div>
+      <button class=del onclick="delMsg(${i})">删除</button>
+    </div>`;
+  });
+  logs.innerHTML = html || "<div class=small>暂无记录</div>";
+}
+
+async function del(i){
+  await fetch(API+"?type=log&i="+i, {method:"DELETE"});
+  loadAdmin();
+}
+
+async function delMsg(i){
+  await fetch(API+"?type=msg&i="+i, {method:"DELETE"});
+  loadAdmin();
+}
+
+async function clearAll(){
+  if(!confirm("确定清空所有？"))return;
+  await fetch(API, {method:"DELETE"});
+  loadAdmin();
 }
 </script>
 </body>

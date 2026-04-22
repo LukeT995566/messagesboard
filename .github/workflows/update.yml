@@ -1,0 +1,70 @@
+name: Update Messages Data
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: '操作类型：addMsg/deleteMsg/clearMsg/addLog/deleteLog/clearLog/changePwd'
+        required: true
+        type: string
+      data:
+        description: '操作参数（JSON字符串）'
+        required: false
+        type: string
+
+jobs:
+  update-data:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出仓库代码
+        uses: actions/checkout@v4
+
+      - name: 初始化数据文件
+        run: |
+          if [ ! -f messages.json ]; then
+            echo '{"normalPwd":"995566","adminPwd":"995566995566","messages":[],"logs":[]}' > messages.json
+          fi
+
+      - name: 处理数据操作
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const data = JSON.parse(fs.readFileSync('messages.json', 'utf8'));
+            const action = '${{ inputs.action }}';
+            const params = JSON.parse('${{ inputs.data }}' || '{}');
+
+            switch (action) {
+              case 'addMsg':
+                data.messages.unshift(params);
+                break;
+              case 'deleteMsg':
+                data.messages.splice(params.index, 1);
+                break;
+              case 'clearMsg':
+                data.messages = [];
+                break;
+              case 'addLog':
+                data.logs.unshift(params);
+                break;
+              case 'deleteLog':
+                data.logs.splice(params.index, 1);
+                break;
+              case 'clearLog':
+                data.logs = [];
+                break;
+              case 'changePwd':
+                data.normalPwd = params.newPwd;
+                break;
+            }
+
+            fs.writeFileSync('messages.json', JSON.stringify(data, null, 2));
+
+      - name: 提交并推送数据
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add messages.json
+          git commit -m "自动更新留言数据"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,6 +1,12 @@
 {
   "normalPwd": "995566",
   "adminPwd": "995566995566",
-  "messages": [],
+  "messages": [
+    {
+      "content": "手动测试留言",
+      "time": "2026-04-22",
+      "ip": "测试"
+    }
+  ],
   "logs": []
 }

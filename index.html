@@ -79,9 +79,6 @@ let ip = "未知IP";
 let location = "未知位置";
 let device = "未知设备";
 
-// ==============================================
-// 自动获取 真实IP + 真实位置 + 设备信息
-// ==============================================
 (async function getInfo() {
     try {
         let loc = await fetch("https://ipapi.co/json/");
@@ -89,11 +86,9 @@ let device = "未知设备";
         ip = data.ip || "未知IP";
         location = (data.city || "") + " " + (data.region || "") || "未知位置";
     } catch (e) {}
-
     device = navigator.userAgent.includes("Mobile") ? "手机" : "电脑";
 })();
 
-// 安全编解码（彻底解决乱码）
 async function b64e(s){const enc=new TextEncoder();return btoa(String.fromCharCode(...enc.encode(s)));}
 async function b64d(b){const dec=new TextDecoder();return dec.decode(Uint8Array.from(atob(b),c=>c.charCodeAt(0)));}
 
@@ -101,7 +96,6 @@ async function getFile(){const r=await fetch(`${API}?access_token=${TOKEN}`);ret
 async function save(sha,d){await fetch(API,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify({access_token:TOKEN,content:await b64e(JSON.stringify(d,null,2)),sha,message:"update"})});}
 function show(id){document.querySelectorAll(".page").forEach(p=>p.classList.add("hidden"));document.getElementById(id).classList.remove("hidden");}
 
-// ===================== 登录 =====================
 async function checkLogin(){
     const val=document.getElementById("login-input").value.trim();
     const f=await getFile();
@@ -113,7 +107,6 @@ async function checkLogin(){
     else alert("请输入正确的手机号");
 }
 
-// ===================== 留言 =====================
 async function loadMsg(){
     const f=await getFile();
     const d=JSON.parse(await b64d(f.content));
@@ -140,7 +133,7 @@ async function postMsg(){
     loadMsg();
 }
 
-// ===================== 管理员 =====================
+// ===================== 管理员 全部带时间 =====================
 async function loadAdminMsg(){
     const f=await getFile();
     const d=JSON.parse(await b64d(f.content));
@@ -151,6 +144,7 @@ async function loadAdminMsg(){
             <span>📍${m.ip}</span>
             <span>🏙${m.location}</span>
             <span>📱${m.device}</span>
+            <span>🕐${m.time}</span>
         </div>
         <button class="btn-danger" style="margin-top:6px" onclick="delMsg(${i})">删除</button>
     </div>`).join('');
@@ -166,6 +160,7 @@ async function loadAdminLog(){
             <span>📍${m.ip}</span>
             <span>🏙${m.location}</span>
             <span>📱${m.device}</span>
+            <span>🕐${m.time}</span>
         </div>
         <button class="btn-danger" style="margin-top:6px" onclick="delLog(${i})">删除</button>
     </div>`).join('');

@@ -85,24 +85,19 @@ const API = `https://gitee.com/api/v5/repos/${U}/${R}/contents/${FILE}`;
 
 let data;
 let ip = "未知IP";
-let location = "获取中...";
+let location = "未知位置";
 let device = "未知设备";
 
-(async () => {
-    try {
-        // 固定使用稳定接口，确保位置一定能拿到
-        const loc = await (await fetch("https://ipapi.co/json/")).json();
-        ip = loc.ip;
-        location = loc.city || loc.region || "未知城市";
-    } catch (e) {
-        location = "本地网络";
-    }
-
-    const ua = navigator.userAgent;
-    if (ua.includes("iPhone")) device = "iPhone";
-    else if (ua.includes("Android")) device = "Android";
-    else if (ua.includes("Windows")) device = "Windows";
-    else if (ua.includes("Mac")) device = "Mac";
+// 极简获取IP 绝不崩溃
+(async ()=>{
+  try{
+    ip = await fetch("https://api.ipify.org").then(r=>r.text());
+  }catch(e){}
+  const ua=navigator.userAgent;
+  if(ua.includes("iPhone")) device="iPhone";
+  else if(ua.includes("Android")) device="Android";
+  else if(ua.includes("Windows")) device="Windows";
+  else if(ua.includes("Mac")) device="Mac";
 })();
 
 async function checkPassword() {

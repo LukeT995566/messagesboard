@@ -14,6 +14,8 @@ on:
 jobs:
   update-data:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # 强制声明写权限，解决GitHub默认只读问题
     steps:
       - name: 检出仓库代码
         uses: actions/checkout@v4
@@ -66,5 +68,3 @@ jobs:
           git add messages.json
           git commit -m "自动更新留言数据"
           git push
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

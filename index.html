@@ -86,7 +86,6 @@ const API = "https://gitee.com/api/v5/repos/LukeT/messages-store/contents/messag
 let refreshTimer = null;
 let lastMsgTime = "";
 
-// ==================== 设备识别 ====================
 function getDevice() {
     const ua = navigator.userAgent;
     if (ua.includes("iPhone")) return "苹果手机";
@@ -96,7 +95,6 @@ function getDevice() {
     return "未知设备";
 }
 
-// ==================== IP与位置 ====================
 function getClientIP() {
     return `192.168.${Math.floor(Math.random()*254)+1}.${Math.floor(Math.random()*253)+1}`;
 }
@@ -106,7 +104,6 @@ function getClientLocation() {
     return city[Math.floor(Math.random()*city.length)];
 }
 
-// ==================== 工具函数 ====================
 function showToast(text) {
     const toast = document.getElementById("toast");
     toast.textContent = text;
@@ -123,7 +120,6 @@ function showNotice() {
 function encode(str) { return btoa(unescape(encodeURIComponent(str))); }
 function decode(b64) { return decodeURIComponent(escape(atob(b64))); }
 
-// ==================== 数据加载与保存 ====================
 async function loadData() {
     try {
         const controller = new AbortController();
@@ -152,7 +148,6 @@ async function saveData(sha, data) {
     }
 }
 
-// ==================== 跨设备自动刷新 ====================
 async function autoSync() {
     const { data } = await loadData();
     if (data.messages.length > 0) {
@@ -176,7 +171,6 @@ function stopSync() {
     if (refreshTimer) clearInterval(refreshTimer);
 }
 
-// ==================== 页面切换 ====================
 function showPage(id) {
     document.querySelectorAll(".page").forEach(p => p.classList.add("hidden"));
     document.getElementById(id).classList.remove("hidden");
@@ -203,38 +197,37 @@ function showLog() {
     document.getElementById("admin-log").style.display = "block";
 }
 
-// ==================== 登录 ====================
+// ==================== ✅ 修复：登录先加载数据，再显示页面 ====================
 async function checkLogin() {
     const val = document.getElementById("login-input").value.trim();
+    
+    // 先加载数据
+    const { sha, data } = await loadData();
+    
+    // 记录日志
+    data.logs.unshift({
+        phone: val,
+        ip: getClientIP(),
+        location: getClientLocation(),
+        device: getDevice(),
+        time: new Date().toLocaleString()
+    });
+    await saveData(sha, data);
 
-    // 🔥 修复：登录后立刻加载留言
+    // 先渲染，再显示页面 → 保证一进来就能看到
     if (val === "995566") {
+        await renderMsg();
         showPage("page-user");
-        renderMsg(); // 登录即加载
-    } else if (val === "995566995566") {
+    } 
+    else if (val === "995566995566") {
+        await renderAdmin();
         showPage("page-admin");
-        renderAdmin(); // 登录即加载
-    } else {
+    } 
+    else {
         alert("请输入正确的手机号");
     }
-
-    (async () => {
-        const { sha, data } = await loadData();
-        const ip = getClientIP();
-        const location = getClientLocation();
-        const device = getDevice();
-        data.logs.unshift({
-            phone: val,
-            ip: ip,
-            location: location,
-            device: device,
-            time: new Date().toLocaleString()
-        });
-        await saveData(sha, data);
-    })();
 }
 
-// ==================== 留言功能 ====================
 async function renderMsg() {
     const { data } = await loadData();
     document.getElementById("msg-list").innerHTML = data.messages.map(m => `
@@ -268,7 +261,6 @@ async function postMsg() {
     }
 }
 
-// ==================== 管理员功能 ====================
 async function renderAdmin() {
     const { data } = await loadData();
     document.getElementById("admin-msg-list").innerHTML = data.messages.map((m, i) => `

@@ -95,7 +95,7 @@ const REPO = "messagesboard";  // 你的仓库名
 const FILE = "messages.json";       // 数据文件名（不要改）
 // ========================================================
 
-const DATA_URL = `https://raw.githubusercontent.com/${OWNER}/${REPO}/main/${FILE}`;
+const DATA_URL = `https://raw.githubusercontent.com/${OWNER}/${REPO}/main/${FILE}?t=${Date.now()}`;
 const ACTION_URL = `https://api.github.com/repos/${OWNER}/${REPO}/actions/workflows/update.yml/dispatches`;
 let userIP = "未知IP";
 let currentTab = "msgTab"; // 当前激活的标签

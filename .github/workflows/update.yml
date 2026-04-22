@@ -1,67 +1,59 @@
-name: Update Messages Data
+name: 自动处理留言和操作
 on:
-  workflow_dispatch:
-    inputs:
-      action:
-        description: '操作类型：addMsg/deleteMsg/clearMsg/addLog/deleteLog/clearLog/changePwd'
-        required: true
-        type: string
-      data:
-        description: '操作参数（JSON字符串）'
-        required: false
-        type: string
+  issues:
+    types: [opened]
 
 jobs:
-  update-data:
+  process:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      issues: write
     steps:
-      - name: 检出仓库代码
-        uses: actions/checkout@v4
-
+      - uses: actions/checkout@v4
+      
       - name: 初始化数据文件
         run: |
           if [ ! -f messages.json ]; then
             echo '{"normalPwd":"995566","adminPwd":"995566995566","messages":[],"logs":[]}' > messages.json
           fi
-
-      - name: 处理数据操作
+      
+      - name: 处理请求
         uses: actions/github-script@v7
         with:
           script: |
             const fs = require('fs');
             const data = JSON.parse(fs.readFileSync('messages.json', 'utf8'));
-            const action = '${{ inputs.action }}';
-            const params = JSON.parse('${{ inputs.data }}' || '{}');
+            const issue = context.payload.issue;
+            const title = issue.title.trim();
+            const body = issue.body.trim();
 
-            switch (action) {
-              case 'addMsg':
-                data.messages.unshift(params);
-                break;
-              case 'deleteMsg':
-                data.messages.splice(params.index, 1);
-                break;
-              case 'clearMsg':
-                data.messages = [];
-                break;
-              case 'addLog':
-                data.logs.unshift(params);
-                break;
-              case 'deleteLog':
-                data.logs.splice(params.index, 1);
-                break;
-              case 'clearLog':
-                data.logs = [];
-                break;
-              case 'changePwd':
-                data.normalPwd = params.newPwd;
-                break;
-            }
+            try {
+              if (title === '留言') {
+                const msg = JSON.parse(body);
+                data.messages.unshift(msg);
+              } else if (title === '操作') {
+                const op = JSON.parse(body);
+                switch (op.type) {
+                  case 'deleteMsg': data.messages.splice(op.index, 1); break;
+                  case 'clearMsg': data.messages = []; break;
+                  case 'deleteLog': data.logs.splice(op.index, 1); break;
+                  case 'clearLog': data.logs = []; break;
+                  case 'changePwd': data.normalPwd = op.newPwd; break;
+                  case 'addLog': data.logs.unshift(op.data); break;
+                }
+              }
+              fs.writeFileSync('messages.json', JSON.stringify(data, null, 2));
+            } catch (e) {}
 
-            fs.writeFileSync('messages.json', JSON.stringify(data, null, 2));
-
-      - name: 提交并推送数据
+            await github.rest.issues.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issue.number,
+              state: 'closed'
+            });
+      
+      - name: 提交更新
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"

@@ -93,18 +93,26 @@ document.onkeydown = e => {
 };
 
 // ==============================================
-// 真实IP + 真实地区（安全异步，绝不卡死）
+// 更精准的真实IP接口（国内定位准）
 // ==============================================
 let realIpInfo = { ip: "未知", location: "未知" };
 
 (async function getRealIp() {
   try {
     const controller = new AbortController();
-    setTimeout(() => controller.abort(), 2000);
-    const res = await fetch("https://api.ip.sb/geoip", { signal: controller.signal });
+    setTimeout(() => controller.abort(), 2500);
+
+    // 更精准的IP接口
+    const res = await fetch("https://whois.pconline.com.cn/ipJson.jsp?json=true", {
+      signal: controller.signal
+    });
     const d = await res.json();
+
     realIpInfo.ip = d.ip || "未知";
-    realIpInfo.location = [d.region, d.city].filter(Boolean).join(" ") || "未知";
+    // 省 + 市，更准确
+    const loc = [d.pro, d.city].filter(i => i && i !== "未知").join(" ");
+    realIpInfo.location = loc || "未知";
+
   } catch (e) {
     realIpInfo.ip = "未知";
     realIpInfo.location = "未知";

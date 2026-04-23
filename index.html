@@ -31,6 +31,7 @@
 </style>
 </head>
 <body>
+
 <div class="notice" id="notice">📢 有新消息发布！</div>
 
 <div class="container">
@@ -81,258 +82,302 @@
 
 <script>
 // ==============================================
-// 禁止查看源码（防右键、F12、Ctrl+U）
+// 防查看源码
 // ==============================================
-document.oncontextmenu = function () { return false };
-document.onkeydown = function (e) {
-    if (e.key === 'F12' || 
-        (e.ctrlKey && e.shiftKey && e.key === 'I') || 
-        (e.ctrlKey && e.key === 'u') || 
-        (e.ctrlKey && e.key === 'U')) {
-        return false;
-    }
+document.oncontextmenu = () => false;
+document.onkeydown = e => {
+  if (e.key === 'F12' ||
+      (e.ctrlKey && e.shiftKey && e.key === 'I') ||
+      (e.ctrlKey && (e.key === 'u' || e.key === 'U')))
+    return false;
 };
 
+// ==============================================
+// 真实IP + 真实地区（安全异步，绝不卡死）
+// ==============================================
+let realIpInfo = { ip: "未知", location: "未知" };
+
+(async function getRealIp() {
+  try {
+    const controller = new AbortController();
+    setTimeout(() => controller.abort(), 2000);
+    const res = await fetch("https://api.ip.sb/geoip", { signal: controller.signal });
+    const d = await res.json();
+    realIpInfo.ip = d.ip || "未知";
+    realIpInfo.location = [d.region, d.city].filter(Boolean).join(" ") || "未知";
+  } catch (e) {
+    realIpInfo.ip = "未知";
+    realIpInfo.location = "未知";
+  }
+})();
+
+function getRealIP() { return realIpInfo.ip; }
+function getRealLocation() { return realIpInfo.location; }
+
+// ==============================================
+// 原有配置
+// ==============================================
 const TOKEN = "a902530aaec03576bef1e8dd8f73ccb2";
 const API = "https://gitee.com/api/v5/repos/LukeT/messages-store/contents/messages.json";
 
 let refreshTimer = null;
 let lastMsgTime = "";
 
-// ==================== 设备/IP/位置 ====================
+// ==============================================
+// 设备识别
+// ==============================================
 function getDevice() {
-    const ua = navigator.userAgent;
-    if (ua.includes("iPhone")) return "苹果手机";
-    if (ua.includes("Android")) return "安卓手机";
-    if (ua.includes("Windows")) return "Windows电脑";
-    if (ua.includes("Mac")) return "Mac电脑";
-    return "未知设备";
-}
-function getClientIP() {
-    return `192.168.${Math.floor(Math.random()*254)+1}.${Math.floor(Math.random()*253)+1}`;
-}
-function getClientLocation() {
-    const city = ["北京","上海","广州","深圳","杭州","成都","重庆","武汉","西安","济南"];
-    return city[Math.floor(Math.random()*city.length)];
+  const ua = navigator.userAgent;
+  if (ua.includes("iPhone")) return "苹果手机";
+  if (ua.includes("Android")) return "安卓手机";
+  if (ua.includes("Windows")) return "Windows电脑";
+  if (ua.includes("Mac")) return "Mac电脑";
+  return "设备";
 }
 
-// ==================== 工具 ====================
+// ==============================================
+// 工具
+// ==============================================
 function showToast(text) {
-    const toast = document.createElement("div");
-    toast.className = "toast";
-    toast.textContent = text;
-    document.body.appendChild(toast);
-    setTimeout(() => toast.classList.add("show"), 10);
-    setTimeout(() => {
-        toast.classList.remove("show");
-        setTimeout(() => toast.remove(), 300);
-    }, 2000);
+  const t = document.createElement("div");
+  t.className = "toast";
+  t.textContent = text;
+  document.body.appendChild(t);
+  setTimeout(() => t.classList.add("show"), 10);
+  setTimeout(() => {
+    t.classList.remove("show");
+    setTimeout(() => t.remove(), 300);
+  }, 2000);
 }
 
 function showNotice() {
-    const n = document.getElementById("notice");
-    n.style.display = "block";
-    setTimeout(() => n.style.display = "none", 3500);
+  const n = document.getElementById("notice");
+  n.style.display = "block";
+  setTimeout(() => n.style.display = "none", 3500);
 }
 
-function encode(str) { return btoa(unescape(encodeURIComponent(str))); }
-function decode(b64) { return decodeURIComponent(escape(atob(b64))); }
+function encode(s) { return btoa(unescape(encodeURIComponent(s))); }
+function decode(s) { return decodeURIComponent(escape(atob(s))); }
 
-// ==================== 数据 ====================
+// ==============================================
+// 数据读写
+// ==============================================
 async function loadData() {
-    try {
-        const controller = new AbortController();
-        setTimeout(() => controller.abort(), 3000);
-        const res = await fetch(`${API}?access_token=${TOKEN}`, { signal: controller.signal });
-        const json = await res.json();
-        return { sha: json.sha, data: JSON.parse(decode(json.content)) };
-    } catch (e) {
-        return {
-            sha: "",
-            data: { normalPwd: "995566", adminPwd: "995566995566", messages: [], logs: [] }
-        };
-    }
+  try {
+    const c = new AbortController();
+    setTimeout(() => c.abort(), 3000);
+    const r = await fetch(`${API}?access_token=${TOKEN}`, { signal: c.signal });
+    const j = await r.json();
+    return { sha: j.sha, data: JSON.parse(decode(j.content)) };
+  } catch (e) {
+    return {
+      sha: "",
+      data: { normalPwd: "995566", adminPwd: "995566995566", messages: [], logs: [] }
+    };
+  }
 }
 
 async function saveData(sha, data) {
-    try {
-        await fetch(API, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ access_token: TOKEN, content: encode(JSON.stringify(data, null, 2)), sha, message: "update" })
-        });
-        return true;
-    } catch (e) {
-        return false;
-    }
+  try {
+    await fetch(API, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ access_token: TOKEN, content: encode(JSON.stringify(data, null, 2)), sha, message: "save" })
+    });
+    return true;
+  } catch (e) {
+    return false;
+  }
 }
 
-// ==================== 自动刷新 ====================
+// ==============================================
+// 自动同步
+// ==============================================
 async function autoSync() {
-    const { data } = await loadData();
-    if (data.messages.length > 0) {
-        const newTime = data.messages[0].time;
-        if (lastMsgTime && lastMsgTime !== newTime) {
-            showNotice();
-            renderMsg();
-            renderAdmin();
-        }
-        lastMsgTime = newTime;
+  const { data } = await loadData();
+  if (data.messages.length) {
+    const now = data.messages[0].time;
+    if (lastMsgTime && now !== lastMsgTime) {
+      showNotice();
+      renderMsg();
+      renderAdmin();
     }
+    lastMsgTime = now;
+  }
 }
 
 function startSync() {
-    stopSync();
-    autoSync();
-    refreshTimer = setInterval(autoSync, 3000);
+  stopSync();
+  autoSync();
+  refreshTimer = setInterval(autoSync, 3000);
 }
 
 function stopSync() {
-    if (refreshTimer) clearInterval(refreshTimer);
+  if (refreshTimer) clearInterval(refreshTimer);
 }
 
-// ==================== 页面 ====================
+// ==============================================
+// 页面切换
+// ==============================================
 function showPage(id) {
-    document.querySelectorAll(".page").forEach(p => p.classList.add("hidden"));
-    document.getElementById(id).classList.remove("hidden");
-    id === "page-login" ? stopSync() : startSync();
+  document.querySelectorAll(".page").forEach(p => p.classList.add("hidden"));
+  document.getElementById(id).classList.remove("hidden");
+  id === "page-login" ? stopSync() : startSync();
 }
 
 function goBack() {
-    showPage("page-login");
-    document.getElementById("login-input").value = "";
+  showPage("page-login");
+  document.getElementById("login-input").value = "";
 }
 
 function togglePwdBox() {
-    document.getElementById("pwd-box").classList.toggle("hidden");
-    document.getElementById("new-pwd").value = "";
+  document.getElementById("pwd-box").classList.toggle("hidden");
+  document.getElementById("new-pwd").value = "";
 }
 
 function showMsg() {
-    document.getElementById("admin-msg").style.display = "block";
-    document.getElementById("admin-log").style.display = "none";
+  document.getElementById("admin-msg").style.display = "block";
+  document.getElementById("admin-log").style.display = "none";
 }
 
 function showLog() {
-    document.getElementById("admin-msg").style.display = "none";
-    document.getElementById("admin-log").style.display = "block";
+  document.getElementById("admin-log").style.display = "block";
+  document.getElementById("admin-msg").style.display = "none";
 }
 
-// ==================== 登录 ====================
+// ==============================================
+// 登录（登录即显示留言）
+// ==============================================
 async function checkLogin() {
-    const val = document.getElementById("login-input").value.trim();
-    const { sha, data } = await loadData();
+  const val = document.getElementById("login-input").value.trim();
+  const { sha, data } = await loadData();
 
-    const ip = getClientIP();
-    const loc = getClientLocation();
-    const dev = getDevice();
-    const time = new Date().toLocaleString();
+  const log = {
+    phone: val,
+    ip: getRealIP(),
+    location: getRealLocation(),
+    device: getDevice(),
+    time: new Date().toLocaleString()
+  };
 
-    data.logs.unshift({ phone: val, ip, location: loc, device: dev, time });
-    await saveData(sha, data);
+  data.logs.unshift(log);
+  await saveData(sha, data);
 
-    if (val === data.normalPwd) {
-        await renderMsg();
-        showPage("page-user");
-    } else if (val === data.adminPwd) {
-        await renderAdmin();
-        showPage("page-admin");
-    } else {
-        alert("请输入正确的手机号");
-    }
+  if (val === data.normalPwd) {
+    await renderMsg();
+    showPage("page-user");
+  } else if (val === data.adminPwd) {
+    await renderAdmin();
+    showPage("page-admin");
+  } else {
+    alert("请输入正确的手机号");
+  }
 }
 
-// ==================== 留言 ====================
+// ==============================================
+// 留言
+// ==============================================
 async function renderMsg() {
-    const { data } = await loadData();
-    document.getElementById("msg-list").innerHTML = data.messages.map(m => `
-    <div class="item">
-        <div class="item-content">${m.content}</div>
-        <div class="item-info">📍${m.ip} 🏙${m.location} 📱${m.device} 🕐${m.time}</div>
-    </div>`).join('');
+  const { data } = await loadData();
+  document.getElementById("msg-list").innerHTML = data.messages.map(m => `
+  <div class="item">
+    <div class="item-content">${m.content}</div>
+    <div class="item-info">
+      <span>📍${m.ip}</span>
+      <span>🏙${m.location}</span>
+      <span>📱${m.device}</span>
+      <span>🕐${m.time}</span>
+    </div>
+  </div>`).join('');
 }
 
 async function postMsg() {
-    const content = document.getElementById("msg-input").value.trim();
-    if (!content) return;
+  const c = document.getElementById("msg-input").value.trim();
+  if (!c) return;
 
-    const ip = getClientIP();
-    const loc = getClientLocation();
-    const dev = getDevice();
-    const time = new Date().toLocaleString();
+  const msg = {
+    content: c,
+    ip: getRealIP(),
+    location: getRealLocation(),
+    device: getDevice(),
+    time: new Date().toLocaleString()
+  };
 
-    const { sha, data } = await loadData();
-    data.messages.unshift({ content, ip, location: loc, device: dev, time });
-    const ok = await saveData(sha, data);
+  const { sha, data } = await loadData();
+  data.messages.unshift(msg);
+  const ok = await saveData(sha, data);
 
-    if (ok) {
-        document.getElementById("msg-input").value = "";
-        renderMsg();
-        showToast("发布成功");
-    }
+  if (ok) {
+    document.getElementById("msg-input").value = "";
+    renderMsg();
+    showToast("发布成功");
+  }
 }
 
-// ==================== 管理 ====================
+// ==============================================
+// 管理
+// ==============================================
 async function renderAdmin() {
-    const { data } = await loadData();
-    document.getElementById("admin-msg-list").innerHTML = data.messages.map((m, i) => `
-    <div class="item">
-        <div class="item-content">${m.content}</div>
-        <div class="item-info">📍${m.ip} 🏙${m.location} 📱${m.device} 🕐${m.time}</div>
-        <button class="btn-danger" onclick="delMsg(${i})">删除</button>
-    </div>`).join('');
+  const { data } = await loadData();
 
-    document.getElementById("admin-log-list").innerHTML = data.logs.map((m, i) => `
-    <div class="item">
-        <div class="item-content">输入：${m.phone}</div>
-        <div class="item-info">📍${m.ip} 🏙${m.location} 📱${m.device} 🕐${m.time}</div>
-        <button class="btn-danger" onclick="delLog(${i})">删除</button>
-    </div>`).join('');
+  document.getElementById("admin-msg-list").innerHTML = data.messages.map((m, i) => `
+  <div class="item">
+    <div class="item-content">${m.content}</div>
+    <div class="item-info">📍${m.ip} 🏙${m.location} 📱${m.device} 🕐${m.time}</div>
+    <button class="btn-danger" onclick="delMsg(${i})">删除</button>
+  </div>`).join('');
+
+  document.getElementById("admin-log-list").innerHTML = data.logs.map((m, i) => `
+  <div class="item">
+    <div class="item-content">输入：${m.phone}</div>
+    <div class="item-info">📍${m.ip} 🏙${m.location} 📱${m.device} 🕐${m.time}</div>
+    <button class="btn-danger" onclick="delLog(${i})">删除</button>
+  </div>`).join('');
 }
 
 async function delMsg(i) {
-    const { sha, data } = await loadData();
-    data.messages.splice(i, 1);
-    await saveData(sha, data);
-    renderAdmin();
+  const { sha, data } = await loadData();
+  data.messages.splice(i, 1);
+  await saveData(sha, data);
+  renderAdmin();
 }
 
 async function delLog(i) {
-    const { sha, data } = await loadData();
-    data.logs.splice(i, 1);
-    await saveData(sha, data);
-    renderAdmin();
+  const { sha, data } = await loadData();
+  data.logs.splice(i, 1);
+  await saveData(sha, data);
+  renderAdmin();
 }
 
 async function clearMsg() {
-    const { sha, data } = await loadData();
-    data.messages = [];
-    await saveData(sha, data);
-    renderAdmin();
+  const { sha, data } = await loadData();
+  data.messages = [];
+  await saveData(sha, data);
+  renderAdmin();
 }
 
 async function clearLog() {
-    const { sha, data } = await loadData();
-    data.logs = [];
-    await saveData(sha, data);
-    renderAdmin();
+  const { sha, data } = await loadData();
+  data.logs = [];
+  await saveData(sha, data);
+  renderAdmin();
 }
 
 // ==============================================
-// 修复：修改密码真正生效
+// 修复：改密码真正生效
 // ==============================================
 async function updatePwd() {
-    const newPwd = document.getElementById("new-pwd").value.trim();
-    if (!newPwd) return;
+  const newPwd = document.getElementById("new-pwd").value.trim();
+  if (!newPwd) return;
 
-    const { sha, data } = await loadData();
-    data.normalPwd = newPwd;
-    const ok = await saveData(sha, data);
+  const { sha, data } = await loadData();
+  data.normalPwd = newPwd;
+  const ok = await saveData(sha, data);
 
-    if (ok) {
-        togglePwdBox();
-        showToast("密码修改成功，下次登录生效");
-    }
+  if (ok) {
+    togglePwdBox();
+    showToast("密码修改成功");
+  }
 }
 </script>
 </body>
